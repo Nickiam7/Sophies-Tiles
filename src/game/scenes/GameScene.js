@@ -44,6 +44,7 @@ class GameScene extends Phaser.Scene {
   }
 
   setupInput() {
+    // Set up lane-based input (only as fallback when not clicking tiles directly)
     this.input.on('pointerdown', this.handlePointerDown, this);
     this.input.on('pointerup', this.handlePointerUp, this);
     
@@ -92,6 +93,11 @@ class GameScene extends Phaser.Scene {
     const tileHeight = isLongTile ? GAME_CONFIG.tileHeight * 2 : GAME_CONFIG.tileHeight;
     const color = isLongTile ? GAME_CONFIG.colors.blue : GAME_CONFIG.colors.green;
 
+    // Create an invisible interactive rectangle for the tile
+    const hitArea = this.add.rectangle(x, y + tileHeight/2, GAME_CONFIG.tileWidth - 10, tileHeight);
+    hitArea.setInteractive();
+    hitArea.setAlpha(0.01); // Almost invisible but still interactive
+    
     const tile = this.add.graphics();
     tile.fillStyle(color, 0.9);
     tile.fillRoundedRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth - 10, tileHeight, 8);
@@ -113,6 +119,56 @@ class GameScene extends Phaser.Scene {
     tile.tileHeight = tileHeight;
     tile.isHit = false;
     tile.holdProgress = 0;
+    tile.hitArea = hitArea;
+    tile.isHolding = false;
+
+    // Add event listeners to the hit area
+    hitArea.on('pointerdown', () => {
+      if (!tile.isHit) {
+        if (tile.isLongTile) {
+          this.holdingTiles.set(lane, tile);
+          tile.isHolding = true;
+        } else {
+          this.hitTile(tile);
+        }
+      }
+    });
+
+    hitArea.on('pointerup', () => {
+      if (tile.isLongTile && tile.isHolding) {
+        tile.isHolding = false;
+        const progress = tile.holdProgress / tile.tileHeight;
+        this.score += Math.floor(20 * progress);
+        
+        if (progress >= 0.8) {
+          this.combo++;
+          this.hitTile(tile);
+        } else {
+          this.combo = 0;
+        }
+        
+        this.holdingTiles.delete(lane);
+        this.updateUI();
+      }
+    });
+
+    hitArea.on('pointerout', () => {
+      if (tile.isLongTile && tile.isHolding) {
+        tile.isHolding = false;
+        const progress = tile.holdProgress / tile.tileHeight;
+        this.score += Math.floor(20 * progress);
+        
+        if (progress >= 0.8) {
+          this.combo++;
+          this.hitTile(tile);
+        } else {
+          this.combo = 0;
+        }
+        
+        this.holdingTiles.delete(lane);
+        this.updateUI();
+      }
+    });
 
     return tile;
   }
@@ -190,6 +246,7 @@ class GameScene extends Phaser.Scene {
 
     tile.destroy();
     if (tile.holdText) tile.holdText.destroy();
+    if (tile.hitArea) tile.hitArea.destroy();
     
     this.updateUI();
   }
@@ -202,12 +259,18 @@ class GameScene extends Phaser.Scene {
 
       tile.y += this.gameSpeed * this.game.loop.delta / 1000;
       
+      // Move the hit area with the tile
+      if (tile.hitArea) {
+        tile.hitArea.y = tile.y + tile.tileHeight/2;
+      }
+      
       if (tile.holdText) {
         tile.holdText.x = tile.x;
         tile.holdText.y = tile.y + tile.tileHeight/2;
       }
 
-      if (this.holdingTiles.has(tile.lane) && this.holdingTiles.get(tile.lane) === tile) {
+      // Handle hold progress for tiles being held (either directly or through lane system)
+      if ((tile.isHolding) || (this.holdingTiles.has(tile.lane) && this.holdingTiles.get(tile.lane) === tile)) {
         tile.holdProgress = Math.min(tile.holdProgress + this.gameSpeed * this.game.loop.delta / 1000, tile.tileHeight);
         
         const progressHeight = tile.holdProgress;
@@ -250,6 +313,7 @@ class GameScene extends Phaser.Scene {
 
     tile.destroy();
     if (tile.holdText) tile.holdText.destroy();
+    if (tile.hitArea) tile.hitArea.destroy();
     
     this.updateUI();
 
@@ -270,6 +334,7 @@ class GameScene extends Phaser.Scene {
     this.tiles.forEach(tile => {
       tile.destroy();
       if (tile.holdText) tile.holdText.destroy();
+      if (tile.hitArea) tile.hitArea.destroy();
     });
 
     this.scene.start('GameOverScene', { score: this.score });

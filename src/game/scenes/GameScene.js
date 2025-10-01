@@ -141,7 +141,6 @@ class GameScene extends Phaser.Scene {
     // Progress bar fill
     this.progressBarFill = this.add.graphics();
     this.progressBarFill.setDepth(101);
-    this.updateProgressBar(0);
     
     // Progress segments (25% marks)
     for (let i = 1; i < 4; i++) {
@@ -159,9 +158,15 @@ class GameScene extends Phaser.Scene {
     });
     this.timeText.setOrigin(1, 0);
     this.timeText.setDepth(101);
+    
+    // Initialize progress bar with 0
+    this.updateProgressBar(0);
   }
 
   updateProgressBar(progress) {
+    // Safety check - only update if progress bar exists
+    if (!this.progressBarFill) return;
+    
     const { width } = this.cameras.main;
     const progressBarWidth = 160;
     const progressBarHeight = 16;

@@ -42,7 +42,7 @@ class GameScene extends Phaser.Scene {
     }
 
     const hitZone = this.add.graphics();
-    hitZone.fillStyle(0x00ff00, 0.2);
+    hitZone.fillStyle(0xff0000, 0.2);  // Red danger zone
     hitZone.fillRect(0, GAME_CONFIG.height - 100, GAME_CONFIG.width, 100);
   }
 

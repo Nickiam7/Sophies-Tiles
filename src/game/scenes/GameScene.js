@@ -33,7 +33,7 @@ class GameScene extends Phaser.Scene {
 
   setupLanes() {
     const laneWidth = GAME_CONFIG.width / GAME_CONFIG.lanes;
-    
+
     for (let i = 0; i < GAME_CONFIG.lanes; i++) {
       const x = i * laneWidth + laneWidth / 2;
       const lane = this.add.graphics();
@@ -50,10 +50,10 @@ class GameScene extends Phaser.Scene {
     // Set up lane-based input (only as fallback when not clicking tiles directly)
     this.input.on('pointerdown', this.handlePointerDown, this);
     this.input.on('pointerup', this.handlePointerUp, this);
-    
+
     const keys = ['A', 'S', 'D', 'F'];
     this.keyboardKeys = {};
-    
+
     keys.forEach((key, index) => {
       this.keyboardKeys[key] = this.input.keyboard.addKey(key);
       this.keyboardKeys[key].on('down', () => this.handleLanePress(index));
@@ -67,7 +67,7 @@ class GameScene extends Phaser.Scene {
       fill: '#ffffff'
     });
 
-    this.comboText = this.add.text(10, 40, 'Combo: 0', {
+    this.comboText = this.add.text(10, 40, 'Streak: 0', {
       fontSize: '20px',
       fill: '#ffff00'
     });
@@ -84,7 +84,7 @@ class GameScene extends Phaser.Scene {
     const lane = Phaser.Math.Between(0, GAME_CONFIG.lanes - 1);
     const isLongTile = Math.random() < 0.2;
     const tile = this.createTile(lane, isLongTile);
-    
+
     this.tiles.push(tile);
   }
 
@@ -100,11 +100,11 @@ class GameScene extends Phaser.Scene {
     const hitArea = this.add.rectangle(x, y + tileHeight/2, GAME_CONFIG.tileWidth - 10, tileHeight);
     hitArea.setInteractive();
     hitArea.setAlpha(0.01); // Almost invisible but still interactive
-    
+
     const tile = this.add.graphics();
     tile.fillStyle(color, 0.9);
     tile.fillRoundedRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth - 10, tileHeight, 8);
-    
+
     if (isLongTile) {
       const holdText = this.add.text(0, tileHeight/2, '⬆ HOLD ⬆', {
         fontSize: '16px',
@@ -142,14 +142,14 @@ class GameScene extends Phaser.Scene {
         tile.isHolding = false;
         const progress = tile.holdProgress / tile.tileHeight;
         this.score += Math.floor(20 * progress);
-        
+
         if (progress >= 0.8) {
           this.combo++;
           this.hitTile(tile);
         } else {
           this.combo = 0;
         }
-        
+
         this.holdingTiles.delete(lane);
         this.updateUI();
       }
@@ -160,14 +160,14 @@ class GameScene extends Phaser.Scene {
         tile.isHolding = false;
         const progress = tile.holdProgress / tile.tileHeight;
         this.score += Math.floor(20 * progress);
-        
+
         if (progress >= 0.8) {
           this.combo++;
           this.hitTile(tile);
         } else {
           this.combo = 0;
         }
-        
+
         this.holdingTiles.delete(lane);
         this.updateUI();
       }
@@ -215,14 +215,14 @@ class GameScene extends Phaser.Scene {
     if (holdingTile) {
       const progress = holdingTile.holdProgress / holdingTile.tileHeight;
       this.score += Math.floor(20 * progress);
-      
+
       if (progress >= 0.8) {
         this.combo++;
         this.hitTile(holdingTile);
       } else {
         this.combo = 0;
       }
-      
+
       this.holdingTiles.delete(lane);
       this.updateUI();
     }
@@ -230,15 +230,20 @@ class GameScene extends Phaser.Scene {
 
   hitTile(tile) {
     if (tile.isHit) return;
-    
+
     tile.isHit = true;
     this.score += 10 * Math.max(1, Math.floor(this.combo / 5));
     this.combo++;
 
+    // Check for streak milestones (every 10)
+    if (this.combo % 10 === 0) {
+      this.celebrateStreakMilestone(this.combo);
+    }
+
     const hitEffect = this.add.graphics();
     hitEffect.fillStyle(0xffffff, 0.8);
     hitEffect.fillCircle(tile.x, tile.y + tile.tileHeight/2, 30);
-    
+
     this.tweens.add({
       targets: hitEffect,
       alpha: 0,
@@ -250,8 +255,124 @@ class GameScene extends Phaser.Scene {
     tile.destroy();
     if (tile.holdText) tile.holdText.destroy();
     if (tile.hitArea) tile.hitArea.destroy();
-    
+
     this.updateUI();
+  }
+
+  celebrateStreakMilestone(streak) {
+    const { width, height } = this.cameras.main;
+    
+    // Choose encouraging message based on streak level
+    const messages = [
+      "Great job! Keep going!",
+      "Amazing streak!",
+      "You're on fire! 🔥",
+      "Incredible rhythm!",
+      "Unstoppable!",
+      "Perfect timing!",
+      "Keep the streak alive!"
+    ];
+    const message = streak >= 50 ? "LEGENDARY STREAK! 🌟" : messages[Math.floor(Math.random() * messages.length)];
+    
+    // Create celebration text
+    const celebrationText = this.add.text(width / 2, height / 2 - 100, `${streak} STREAK!`, {
+      fontSize: '48px',
+      fill: '#ffff00',
+      fontStyle: 'bold',
+      stroke: '#ff6600',
+      strokeThickness: 6
+    });
+    celebrationText.setOrigin(0.5);
+    celebrationText.setDepth(1000);
+    
+    // Create encouraging message
+    const encourageText = this.add.text(width / 2, height / 2 - 40, message, {
+      fontSize: '28px',
+      fill: '#ffffff',
+      fontStyle: 'bold'
+    });
+    encourageText.setOrigin(0.5);
+    encourageText.setDepth(1000);
+    
+    // Create particle burst effect
+    for (let i = 0; i < 12; i++) {
+      const particle = this.add.graphics();
+      particle.fillStyle(Phaser.Math.Between(0, 1) ? 0xffff00 : 0xff6600, 1);
+      particle.fillCircle(0, 0, Phaser.Math.Between(4, 8));
+      particle.x = width / 2;
+      particle.y = height / 2 - 70;
+      
+      const angle = (i / 12) * Math.PI * 2;
+      const distance = Phaser.Math.Between(100, 200);
+      
+      this.tweens.add({
+        targets: particle,
+        x: particle.x + Math.cos(angle) * distance,
+        y: particle.y + Math.sin(angle) * distance,
+        alpha: 0,
+        scale: 0,
+        duration: 1000,
+        ease: 'Cubic.easeOut',
+        onComplete: () => particle.destroy()
+      });
+    }
+    
+    // Animate the text
+    this.tweens.add({
+      targets: celebrationText,
+      scale: { from: 0, to: 1.2 },
+      duration: 300,
+      ease: 'Back.easeOut',
+      onComplete: () => {
+        this.tweens.add({
+          targets: celebrationText,
+          y: celebrationText.y - 50,
+          alpha: 0,
+          duration: 1000,
+          delay: 1000,
+          onComplete: () => celebrationText.destroy()
+        });
+      }
+    });
+    
+    this.tweens.add({
+      targets: encourageText,
+      scale: { from: 0, to: 1 },
+      duration: 400,
+      delay: 100,
+      ease: 'Back.easeOut',
+      onComplete: () => {
+        this.tweens.add({
+          targets: encourageText,
+          y: encourageText.y - 50,
+          alpha: 0,
+          duration: 1000,
+          delay: 900,
+          onComplete: () => encourageText.destroy()
+        });
+      }
+    });
+    
+    // Screen flash effect
+    const flash = this.add.rectangle(width / 2, height / 2, width, height, 0xffffff);
+    flash.setAlpha(0.3);
+    flash.setDepth(999);
+    
+    this.tweens.add({
+      targets: flash,
+      alpha: 0,
+      duration: 200,
+      onComplete: () => flash.destroy()
+    });
+    
+    // Slight camera zoom effect
+    this.cameras.main.zoom = 1.05;
+    this.tweens.add({
+      targets: this.cameras.main,
+      zoom: 1,
+      duration: 300,
+      ease: 'Cubic.easeOut'
+    });
   }
 
   update() {
@@ -261,12 +382,12 @@ class GameScene extends Phaser.Scene {
       if (tile.isHit) return false;
 
       tile.y += this.gameSpeed * this.game.loop.delta / 1000;
-      
+
       // Move the hit area with the tile
       if (tile.hitArea) {
         tile.hitArea.y = tile.y + tile.tileHeight/2;
       }
-      
+
       if (tile.holdText) {
         tile.holdText.x = tile.x;
         tile.holdText.y = tile.y + tile.tileHeight/2;
@@ -275,7 +396,7 @@ class GameScene extends Phaser.Scene {
       // Handle hold progress for tiles being held (either directly or through lane system)
       if ((tile.isHolding) || (this.holdingTiles.has(tile.lane) && this.holdingTiles.get(tile.lane) === tile)) {
         tile.holdProgress = Math.min(tile.holdProgress + this.gameSpeed * this.game.loop.delta / 1000, tile.tileHeight);
-        
+
         const progressHeight = tile.holdProgress;
         tile.clear();
         tile.fillStyle(GAME_CONFIG.colors.blue, 0.5);
@@ -300,13 +421,13 @@ class GameScene extends Phaser.Scene {
   missTile(tile) {
     this.combo = 0;
     this.lives--;
-    
+
     this.cameras.main.shake(200, 0.01);
-    
+
     const missEffect = this.add.graphics();
     missEffect.fillStyle(GAME_CONFIG.colors.miss, 0.3);
     missEffect.fillRect(0, 0, GAME_CONFIG.width, GAME_CONFIG.height);
-    
+
     this.tweens.add({
       targets: missEffect,
       alpha: 0,
@@ -317,7 +438,7 @@ class GameScene extends Phaser.Scene {
     tile.destroy();
     if (tile.holdText) tile.holdText.destroy();
     if (tile.hitArea) tile.hitArea.destroy();
-    
+
     this.updateUI();
 
     if (this.lives <= 0) {
@@ -327,23 +448,23 @@ class GameScene extends Phaser.Scene {
 
   updateUI() {
     this.scoreText.setText(`Score: ${this.score}`);
-    this.comboText.setText(`Combo: ${this.combo}`);
+    this.comboText.setText(`Streak: ${this.combo}`);
     this.livesText.setText(`Lives: ${this.lives}`);
   }
 
   gameOver() {
     this.isGameOver = true;
-    
+
     // Clean up all tiles
     this.tiles.forEach(tile => {
       if (tile.hitArea) tile.hitArea.destroy();
       if (tile.holdText) tile.holdText.destroy();
       tile.destroy();
     });
-    
+
     // Clear the tiles array
     this.tiles = [];
-    
+
     // Clear any timers
     this.time.removeAllEvents();
 

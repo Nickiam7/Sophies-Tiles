@@ -13,23 +13,23 @@ class GameOverScene extends Phaser.Scene {
     const { width, height } = this.cameras.main;
 
     const gameOverText = this.add.text(width / 2, height / 3, 'GAME OVER', {
-      fontSize: '48px',
+      fontSize: '72px',
       fill: '#ff0000',
       fontStyle: 'bold'
     });
     gameOverText.setOrigin(0.5);
 
     const scoreText = this.add.text(width / 2, height / 2, `Final Score: ${this.finalScore}`, {
-      fontSize: '32px',
+      fontSize: '48px',
       fill: '#ffffff'
     });
     scoreText.setOrigin(0.5);
 
     const retryButton = this.add.text(width / 2, height * 0.65, 'RETRY', {
-      fontSize: '36px',
+      fontSize: '56px',
       fill: '#00ff00',
       backgroundColor: '#333333',
-      padding: { x: 20, y: 10 }
+      padding: { x: 40, y: 20 }
     });
     retryButton.setOrigin(0.5);
     retryButton.setInteractive({ useHandCursor: true });
@@ -47,10 +47,10 @@ class GameOverScene extends Phaser.Scene {
     });
 
     const menuButton = this.add.text(width / 2, height * 0.8, 'MAIN MENU', {
-      fontSize: '24px',
+      fontSize: '36px',
       fill: '#aaaaaa',
       backgroundColor: '#222222',
-      padding: { x: 15, y: 8 }
+      padding: { x: 30, y: 15 }
     });
     menuButton.setOrigin(0.5);
     menuButton.setInteractive({ useHandCursor: true });

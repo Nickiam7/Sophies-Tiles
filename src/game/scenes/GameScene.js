@@ -101,16 +101,20 @@ class GameScene extends Phaser.Scene {
   }
 
   setupUI() {
+    // Scale font sizes for tablet
+    const labelSize = '20px';
+    const valueSize = '36px';
+    
     // Score on left - label and value stacked
-    this.scoreLabel = this.add.text(40, 25, 'SCORE', {
-      fontSize: '14px',
+    this.scoreLabel = this.add.text(80, 30, 'SCORE', {
+      fontSize: labelSize,
       fill: '#aaaaaa'
     });
     this.scoreLabel.setOrigin(0.5, 0);
     this.scoreLabel.setDepth(101);
     
-    this.scoreText = this.add.text(40, 45, '0', {
-      fontSize: '24px',
+    this.scoreText = this.add.text(80, 65, '0', {
+      fontSize: valueSize,
       fill: '#ffffff',
       fontStyle: 'bold'
     });
@@ -119,15 +123,15 @@ class GameScene extends Phaser.Scene {
 
     // Lives on right - label and value stacked
     const { width } = this.cameras.main;
-    this.livesLabel = this.add.text(width - 40, 25, 'LIVES', {
-      fontSize: '14px',
+    this.livesLabel = this.add.text(width - 80, 30, 'LIVES', {
+      fontSize: labelSize,
       fill: '#aaaaaa'
     });
     this.livesLabel.setOrigin(0.5, 0);
     this.livesLabel.setDepth(101);
     
-    this.livesText = this.add.text(width - 40, 45, '3', {
-      fontSize: '24px',
+    this.livesText = this.add.text(width - 80, 65, '3', {
+      fontSize: valueSize,
       fill: '#ff6666',
       fontStyle: 'bold'
     });
@@ -138,20 +142,20 @@ class GameScene extends Phaser.Scene {
   setupLevelUI() {
     const { width } = this.cameras.main;
     
-    // Level indicator in HUD
-    this.levelText = this.add.text(width / 2, 10, `LEVEL ${this.currentLevel}`, {
-      fontSize: '22px',
+    // Level indicator in HUD - scaled for tablet
+    this.levelText = this.add.text(width / 2, 15, `LEVEL ${this.currentLevel}`, {
+      fontSize: '28px',
       fill: '#00ffff',
       fontStyle: 'bold'
     });
     this.levelText.setOrigin(0.5, 0);
     this.levelText.setDepth(101);
     
-    // Progress bar in HUD
-    const progressBarWidth = 160;
-    const progressBarHeight = 14;
+    // Progress bar in HUD - wider for tablet
+    const progressBarWidth = 280;
+    const progressBarHeight = 18;
     const progressBarX = width / 2 - progressBarWidth / 2;
-    const progressBarY = 40;
+    const progressBarY = 50;
     
     this.progressBarBg = this.add.graphics();
     this.progressBarBg.fillStyle(0x333333, 0.8);
@@ -172,8 +176,8 @@ class GameScene extends Phaser.Scene {
     }
 
     // Streak below progress bar
-    this.comboText = this.add.text(width / 2, 65, 'Streak: 0', {
-      fontSize: '18px',
+    this.comboText = this.add.text(width / 2, 85, 'Streak: 0', {
+      fontSize: '24px',
       fill: '#ffff00'
     });
     this.comboText.setOrigin(0.5, 0);
@@ -188,10 +192,10 @@ class GameScene extends Phaser.Scene {
     if (!this.progressBarFill) return;
     
     const { width } = this.cameras.main;
-    const progressBarWidth = 160;
-    const progressBarHeight = 14;
+    const progressBarWidth = 280;
+    const progressBarHeight = 18;
     const progressBarX = width / 2 - progressBarWidth / 2;
-    const progressBarY = 40;
+    const progressBarY = 50;
     
     this.progressBarFill.clear();
     this.progressBarFill.fillStyle(0x00ff00, 1);
@@ -230,7 +234,7 @@ class GameScene extends Phaser.Scene {
 
     if (isLongTile) {
       const holdText = this.add.text(0, tileHeight/2, '⬆ HOLD ⬆', {
-        fontSize: '16px',
+        fontSize: '20px',
         fill: '#ffffff',
         fontStyle: 'bold'
       });

@@ -30,6 +30,7 @@ class GameScene extends Phaser.Scene {
   }
 
   create() {
+    this.createHUD();
     this.setupLanes();
     this.setupInput();
     this.setupUI();
@@ -47,19 +48,35 @@ class GameScene extends Phaser.Scene {
     });
   }
 
+  createHUD() {
+    // Create HUD background with high depth to render on top
+    const hudBg = this.add.graphics();
+    hudBg.fillStyle(GAME_CONFIG.colors.hudBackground, 1);
+    hudBg.fillRect(0, 0, GAME_CONFIG.width, GAME_CONFIG.hudHeight);
+    
+    // Add separator line
+    hudBg.lineStyle(2, 0x444444);
+    hudBg.lineBetween(0, GAME_CONFIG.hudHeight, GAME_CONFIG.width, GAME_CONFIG.hudHeight);
+    
+    // Set high depth so HUD renders above tiles
+    hudBg.setDepth(100);
+  }
+
   setupLanes() {
     const laneWidth = GAME_CONFIG.width / GAME_CONFIG.lanes;
+    const gameplayStart = GAME_CONFIG.hudHeight;
+    const gameplayEnd = GAME_CONFIG.height;
 
     for (let i = 0; i < GAME_CONFIG.lanes; i++) {
       const x = i * laneWidth + laneWidth / 2;
       const lane = this.add.graphics();
       lane.lineStyle(2, 0x444444);
-      lane.lineBetween(i * laneWidth, 0, i * laneWidth, GAME_CONFIG.height);
+      lane.lineBetween(i * laneWidth, gameplayStart, i * laneWidth, gameplayEnd);
     }
 
     const hitZone = this.add.graphics();
     hitZone.fillStyle(0xff0000, 0.2);  // Red danger zone
-    hitZone.fillRect(0, GAME_CONFIG.height - 100, GAME_CONFIG.width, 100);
+    hitZone.fillRect(0, gameplayEnd - 100, GAME_CONFIG.width, 100);
   }
 
   setupInput() {
@@ -78,45 +95,52 @@ class GameScene extends Phaser.Scene {
   }
 
   setupUI() {
-    this.scoreText = this.add.text(10, 60, 'Score: 0', {
-      fontSize: '24px',
+    // Position UI elements in the HUD area
+    this.scoreText = this.add.text(15, 15, 'Score: 0', {
+      fontSize: '20px',
       fill: '#ffffff'
     });
+    this.scoreText.setDepth(101);
 
-    this.comboText = this.add.text(10, 90, 'Streak: 0', {
-      fontSize: '20px',
+    this.comboText = this.add.text(15, 40, 'Streak: 0', {
+      fontSize: '18px',
       fill: '#ffff00'
     });
+    this.comboText.setDepth(101);
 
-    this.livesText = this.add.text(10, 120, 'Lives: 3', {
-      fontSize: '20px',
+    this.livesText = this.add.text(15, 65, 'Lives: 3', {
+      fontSize: '18px',
       fill: '#ff6666'
     });
+    this.livesText.setDepth(101);
   }
 
   setupLevelUI() {
     const { width } = this.cameras.main;
     
-    // Level indicator
-    this.levelText = this.add.text(width / 2, 10, `LEVEL ${this.currentLevel}`, {
-      fontSize: '28px',
+    // Level indicator in HUD
+    this.levelText = this.add.text(width / 2, 15, `LEVEL ${this.currentLevel}`, {
+      fontSize: '24px',
       fill: '#00ffff',
       fontStyle: 'bold'
     });
     this.levelText.setOrigin(0.5, 0);
+    this.levelText.setDepth(101);
     
-    // Progress bar background
-    const progressBarWidth = 200;
-    const progressBarHeight = 20;
+    // Progress bar in HUD
+    const progressBarWidth = 160;
+    const progressBarHeight = 16;
     const progressBarX = width / 2 - progressBarWidth / 2;
-    const progressBarY = 45;
+    const progressBarY = 50;
     
     this.progressBarBg = this.add.graphics();
     this.progressBarBg.fillStyle(0x333333, 0.8);
     this.progressBarBg.fillRoundedRect(progressBarX, progressBarY, progressBarWidth, progressBarHeight, 5);
+    this.progressBarBg.setDepth(101);
     
     // Progress bar fill
     this.progressBarFill = this.add.graphics();
+    this.progressBarFill.setDepth(101);
     this.updateProgressBar(0);
     
     // Progress segments (25% marks)
@@ -125,21 +149,36 @@ class GameScene extends Phaser.Scene {
       const segment = this.add.graphics();
       segment.lineStyle(2, 0x000000);
       segment.lineBetween(segmentX, progressBarY, segmentX, progressBarY + progressBarHeight);
+      segment.setDepth(102);
     }
+
+    // Add time remaining text
+    this.timeText = this.add.text(width - 15, 40, '20s', {
+      fontSize: '18px',
+      fill: '#aaaaaa'
+    });
+    this.timeText.setOrigin(1, 0);
+    this.timeText.setDepth(101);
   }
 
   updateProgressBar(progress) {
     const { width } = this.cameras.main;
-    const progressBarWidth = 200;
-    const progressBarHeight = 20;
+    const progressBarWidth = 160;
+    const progressBarHeight = 16;
     const progressBarX = width / 2 - progressBarWidth / 2;
-    const progressBarY = 45;
+    const progressBarY = 50;
     
     this.progressBarFill.clear();
     this.progressBarFill.fillStyle(0x00ff00, 1);
     const fillWidth = progressBarWidth * progress;
     if (fillWidth > 0) {
       this.progressBarFill.fillRoundedRect(progressBarX, progressBarY, fillWidth, progressBarHeight, 5);
+    }
+    
+    // Update time remaining
+    if (this.timeText) {
+      const timeRemaining = Math.max(0, Math.ceil((1 - progress) * 20));
+      this.timeText.setText(`${timeRemaining}s`);
     }
   }
 
@@ -156,7 +195,7 @@ class GameScene extends Phaser.Scene {
   createTile(lane, isLongTile = false) {
     const laneWidth = GAME_CONFIG.width / GAME_CONFIG.lanes;
     const x = lane * laneWidth + laneWidth / 2;
-    const y = -GAME_CONFIG.tileHeight;
+    const y = GAME_CONFIG.hudHeight - GAME_CONFIG.tileHeight;  // Start tiles just above HUD
 
     const tileHeight = isLongTile ? GAME_CONFIG.tileHeight * 2 : GAME_CONFIG.tileHeight;
     const color = isLongTile ? GAME_CONFIG.colors.blue : GAME_CONFIG.colors.green;
@@ -597,7 +636,7 @@ class GameScene extends Phaser.Scene {
 
     const missEffect = this.add.graphics();
     missEffect.fillStyle(GAME_CONFIG.colors.miss, 0.3);
-    missEffect.fillRect(0, 0, GAME_CONFIG.width, GAME_CONFIG.height);
+    missEffect.fillRect(0, GAME_CONFIG.hudHeight, GAME_CONFIG.width, GAME_CONFIG.gameplayHeight);
 
     this.tweens.add({
       targets: missEffect,

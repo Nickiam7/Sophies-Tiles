@@ -2,7 +2,9 @@ import Phaser from 'phaser';
 
 export const GAME_CONFIG = {
   width: 400,
-  height: 600,
+  height: 700,  // Increased height for HUD
+  hudHeight: 100,  // Dedicated HUD space at top
+  gameplayHeight: 600,  // Actual gameplay area
   lanes: 4,
   tileWidth: 100,
   tileHeight: 80,
@@ -12,6 +14,7 @@ export const GAME_CONFIG = {
     green: 0x00ff00,
     blue: 0x0099ff,
     background: 0x1a1a1a,
+    hudBackground: 0x2a2a2a,
     miss: 0xff0000
   }
 };

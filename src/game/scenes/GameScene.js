@@ -95,23 +95,37 @@ class GameScene extends Phaser.Scene {
   }
 
   setupUI() {
-    // Position UI elements in the HUD area
-    this.scoreText = this.add.text(15, 15, 'Score: 0', {
-      fontSize: '20px',
-      fill: '#ffffff'
+    // Score on left - label and value stacked
+    this.scoreLabel = this.add.text(40, 25, 'SCORE', {
+      fontSize: '14px',
+      fill: '#aaaaaa'
     });
+    this.scoreLabel.setOrigin(0.5, 0);
+    this.scoreLabel.setDepth(101);
+    
+    this.scoreText = this.add.text(40, 45, '0', {
+      fontSize: '24px',
+      fill: '#ffffff',
+      fontStyle: 'bold'
+    });
+    this.scoreText.setOrigin(0.5, 0);
     this.scoreText.setDepth(101);
 
-    this.comboText = this.add.text(15, 40, 'Streak: 0', {
-      fontSize: '18px',
-      fill: '#ffff00'
+    // Lives on right - label and value stacked
+    const { width } = this.cameras.main;
+    this.livesLabel = this.add.text(width - 40, 25, 'LIVES', {
+      fontSize: '14px',
+      fill: '#aaaaaa'
     });
-    this.comboText.setDepth(101);
-
-    this.livesText = this.add.text(15, 65, 'Lives: 3', {
-      fontSize: '18px',
-      fill: '#ff6666'
+    this.livesLabel.setOrigin(0.5, 0);
+    this.livesLabel.setDepth(101);
+    
+    this.livesText = this.add.text(width - 40, 45, '3', {
+      fontSize: '24px',
+      fill: '#ff6666',
+      fontStyle: 'bold'
     });
+    this.livesText.setOrigin(0.5, 0);
     this.livesText.setDepth(101);
   }
 
@@ -119,8 +133,8 @@ class GameScene extends Phaser.Scene {
     const { width } = this.cameras.main;
     
     // Level indicator in HUD
-    this.levelText = this.add.text(width / 2, 15, `LEVEL ${this.currentLevel}`, {
-      fontSize: '24px',
+    this.levelText = this.add.text(width / 2, 10, `LEVEL ${this.currentLevel}`, {
+      fontSize: '22px',
       fill: '#00ffff',
       fontStyle: 'bold'
     });
@@ -129,9 +143,9 @@ class GameScene extends Phaser.Scene {
     
     // Progress bar in HUD
     const progressBarWidth = 160;
-    const progressBarHeight = 16;
+    const progressBarHeight = 14;
     const progressBarX = width / 2 - progressBarWidth / 2;
-    const progressBarY = 50;
+    const progressBarY = 40;
     
     this.progressBarBg = this.add.graphics();
     this.progressBarBg.fillStyle(0x333333, 0.8);
@@ -151,13 +165,13 @@ class GameScene extends Phaser.Scene {
       segment.setDepth(102);
     }
 
-    // Add time remaining text
-    this.timeText = this.add.text(width - 15, 40, '20s', {
+    // Streak below progress bar
+    this.comboText = this.add.text(width / 2, 65, 'Streak: 0', {
       fontSize: '18px',
-      fill: '#aaaaaa'
+      fill: '#ffff00'
     });
-    this.timeText.setOrigin(1, 0);
-    this.timeText.setDepth(101);
+    this.comboText.setOrigin(0.5, 0);
+    this.comboText.setDepth(101);
     
     // Initialize progress bar with 0
     this.updateProgressBar(0);
@@ -169,21 +183,15 @@ class GameScene extends Phaser.Scene {
     
     const { width } = this.cameras.main;
     const progressBarWidth = 160;
-    const progressBarHeight = 16;
+    const progressBarHeight = 14;
     const progressBarX = width / 2 - progressBarWidth / 2;
-    const progressBarY = 50;
+    const progressBarY = 40;
     
     this.progressBarFill.clear();
     this.progressBarFill.fillStyle(0x00ff00, 1);
     const fillWidth = progressBarWidth * progress;
     if (fillWidth > 0) {
       this.progressBarFill.fillRoundedRect(progressBarX, progressBarY, fillWidth, progressBarHeight, 5);
-    }
-    
-    // Update time remaining
-    if (this.timeText) {
-      const timeRemaining = Math.max(0, Math.ceil((1 - progress) * 20));
-      this.timeText.setText(`${timeRemaining}s`);
     }
   }
 
@@ -662,9 +670,9 @@ class GameScene extends Phaser.Scene {
   }
 
   updateUI() {
-    this.scoreText.setText(`Score: ${this.score}`);
+    this.scoreText.setText(`${this.score}`);
     this.comboText.setText(`Streak: ${this.combo}`);
-    this.livesText.setText(`Lives: ${this.lives}`);
+    this.livesText.setText(`${this.lives}`);
   }
 
   gameVictory() {

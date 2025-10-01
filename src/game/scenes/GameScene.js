@@ -17,12 +17,28 @@ class GameScene extends Phaser.Scene {
     this.gameSpeed = GAME_CONFIG.tileSpeed;
     this.spawnTimer = 0;
     this.holdingTiles = new Map();
+    
+    // Level system
+    this.currentLevel = 1;
+    this.maxLevel = 5;
+    this.levelDuration = 20000; // 20 seconds per level
+    this.levelStartTime = 0;
+    this.levelProgress = 0;
+    this.isTransitioningLevel = false;
+    this.baseSpeed = GAME_CONFIG.tileSpeed;
+    this.speedMultiplier = 1.25; // 25% speed increase per level
   }
 
   create() {
     this.setupLanes();
     this.setupInput();
     this.setupUI();
+    this.setupLevelUI();
+    
+    // Start level timer
+    this.levelStartTime = this.time.now;
+    
+    // Start spawning tiles
     this.time.addEvent({
       delay: GAME_CONFIG.spawnInterval,
       callback: this.spawnTile,
@@ -62,24 +78,73 @@ class GameScene extends Phaser.Scene {
   }
 
   setupUI() {
-    this.scoreText = this.add.text(10, 10, 'Score: 0', {
+    this.scoreText = this.add.text(10, 60, 'Score: 0', {
       fontSize: '24px',
       fill: '#ffffff'
     });
 
-    this.comboText = this.add.text(10, 40, 'Streak: 0', {
+    this.comboText = this.add.text(10, 90, 'Streak: 0', {
       fontSize: '20px',
       fill: '#ffff00'
     });
 
-    this.livesText = this.add.text(10, 70, 'Lives: 3', {
+    this.livesText = this.add.text(10, 120, 'Lives: 3', {
       fontSize: '20px',
       fill: '#ff6666'
     });
   }
 
+  setupLevelUI() {
+    const { width } = this.cameras.main;
+    
+    // Level indicator
+    this.levelText = this.add.text(width / 2, 10, `LEVEL ${this.currentLevel}`, {
+      fontSize: '28px',
+      fill: '#00ffff',
+      fontStyle: 'bold'
+    });
+    this.levelText.setOrigin(0.5, 0);
+    
+    // Progress bar background
+    const progressBarWidth = 200;
+    const progressBarHeight = 20;
+    const progressBarX = width / 2 - progressBarWidth / 2;
+    const progressBarY = 45;
+    
+    this.progressBarBg = this.add.graphics();
+    this.progressBarBg.fillStyle(0x333333, 0.8);
+    this.progressBarBg.fillRoundedRect(progressBarX, progressBarY, progressBarWidth, progressBarHeight, 5);
+    
+    // Progress bar fill
+    this.progressBarFill = this.add.graphics();
+    this.updateProgressBar(0);
+    
+    // Progress segments (25% marks)
+    for (let i = 1; i < 4; i++) {
+      const segmentX = progressBarX + (progressBarWidth * i / 4);
+      const segment = this.add.graphics();
+      segment.lineStyle(2, 0x000000);
+      segment.lineBetween(segmentX, progressBarY, segmentX, progressBarY + progressBarHeight);
+    }
+  }
+
+  updateProgressBar(progress) {
+    const { width } = this.cameras.main;
+    const progressBarWidth = 200;
+    const progressBarHeight = 20;
+    const progressBarX = width / 2 - progressBarWidth / 2;
+    const progressBarY = 45;
+    
+    this.progressBarFill.clear();
+    this.progressBarFill.fillStyle(0x00ff00, 1);
+    const fillWidth = progressBarWidth * progress;
+    if (fillWidth > 0) {
+      this.progressBarFill.fillRoundedRect(progressBarX, progressBarY, fillWidth, progressBarHeight, 5);
+    }
+  }
+
   spawnTile() {
-    if (this.isGameOver) return;
+    if (this.isGameOver || this.isTransitioningLevel) return;
 
     const lane = Phaser.Math.Between(0, GAME_CONFIG.lanes - 1);
     const isLongTile = Math.random() < 0.2;
@@ -378,6 +443,23 @@ class GameScene extends Phaser.Scene {
   update() {
     if (this.isGameOver) return;
 
+    // Update level progress
+    if (!this.isTransitioningLevel) {
+      const elapsed = this.time.now - this.levelStartTime;
+      this.levelProgress = Math.min(elapsed / this.levelDuration, 1);
+      this.updateProgressBar(this.levelProgress);
+      
+      // Check for level completion
+      if (this.levelProgress >= 1) {
+        if (this.currentLevel < this.maxLevel) {
+          this.startLevelTransition();
+        } else if (this.currentLevel === this.maxLevel) {
+          // Victory after completing all 5 levels!
+          this.gameVictory();
+        }
+      }
+    }
+
     this.tiles = this.tiles.filter(tile => {
       if (tile.isHit) return false;
 
@@ -413,9 +495,98 @@ class GameScene extends Phaser.Scene {
       return true;
     });
 
-    if (this.game.loop.frame % 600 === 0) {
-      this.gameSpeed = Math.min(this.gameSpeed + 10, 500);
-    }
+    // Don't do incremental speed changes anymore - speed is controlled by level
+  }
+
+  startLevelTransition() {
+    this.isTransitioningLevel = true;
+    
+    // Clear all tiles on screen
+    this.tiles.forEach(tile => {
+      if (tile.hitArea) tile.hitArea.destroy();
+      if (tile.holdText) tile.holdText.destroy();
+      tile.destroy();
+    });
+    this.tiles = [];
+    
+    // Level complete message
+    const { width, height } = this.cameras.main;
+    const levelCompleteText = this.add.text(width / 2, height / 2 - 100, 'LEVEL COMPLETE!', {
+      fontSize: '48px',
+      fill: '#00ff00',
+      fontStyle: 'bold',
+      stroke: '#ffffff',
+      strokeThickness: 4
+    });
+    levelCompleteText.setOrigin(0.5);
+    levelCompleteText.setDepth(1001);
+    
+    // Animate level complete text
+    this.tweens.add({
+      targets: levelCompleteText,
+      scale: { from: 0, to: 1.2 },
+      duration: 500,
+      ease: 'Back.easeOut',
+      onComplete: () => {
+        this.time.delayedCall(1000, () => {
+          levelCompleteText.destroy();
+          this.startNextLevel();
+        });
+      }
+    });
+  }
+
+  startNextLevel() {
+    this.currentLevel++;
+    
+    // Update speed for new level
+    this.gameSpeed = this.baseSpeed * Math.pow(this.speedMultiplier, this.currentLevel - 1);
+    
+    // Update UI
+    this.levelText.setText(`LEVEL ${this.currentLevel}`);
+    this.updateProgressBar(0);
+    
+    // Countdown
+    const { width, height } = this.cameras.main;
+    const countdownValues = ['3', '2', '1', 'GO!'];
+    let countdownIndex = 0;
+    
+    const showCountdown = () => {
+      if (countdownIndex < countdownValues.length) {
+        const countdownText = this.add.text(width / 2, height / 2, countdownValues[countdownIndex], {
+          fontSize: '72px',
+          fill: countdownIndex === 3 ? '#00ff00' : '#ffffff',
+          fontStyle: 'bold',
+          stroke: '#000000',
+          strokeThickness: 6
+        });
+        countdownText.setOrigin(0.5);
+        countdownText.setDepth(1001);
+        
+        this.tweens.add({
+          targets: countdownText,
+          scale: { from: 0.5, to: 1.5 },
+          alpha: { from: 1, to: 0 },
+          duration: 800,
+          ease: 'Cubic.easeOut',
+          onComplete: () => countdownText.destroy()
+        });
+        
+        countdownIndex++;
+        if (countdownIndex < countdownValues.length) {
+          this.time.delayedCall(800, showCountdown);
+        } else {
+          // Start the new level
+          this.time.delayedCall(800, () => {
+            this.isTransitioningLevel = false;
+            this.levelStartTime = this.time.now;
+            this.levelProgress = 0;
+          });
+        }
+      }
+    };
+    
+    showCountdown();
   }
 
   missTile(tile) {
@@ -450,6 +621,78 @@ class GameScene extends Phaser.Scene {
     this.scoreText.setText(`Score: ${this.score}`);
     this.comboText.setText(`Streak: ${this.combo}`);
     this.livesText.setText(`Lives: ${this.lives}`);
+  }
+
+  gameVictory() {
+    this.isGameOver = true;
+    this.isTransitioningLevel = true;
+    
+    // Clean up all tiles
+    this.tiles.forEach(tile => {
+      if (tile.hitArea) tile.hitArea.destroy();
+      if (tile.holdText) tile.holdText.destroy();
+      tile.destroy();
+    });
+    this.tiles = [];
+    
+    // Victory message
+    const { width, height } = this.cameras.main;
+    const victoryText = this.add.text(width / 2, height / 2 - 100, 'VICTORY!', {
+      fontSize: '64px',
+      fill: '#ffd700',
+      fontStyle: 'bold',
+      stroke: '#ffffff',
+      strokeThickness: 6
+    });
+    victoryText.setOrigin(0.5);
+    
+    const scoreText = this.add.text(width / 2, height / 2, `Final Score: ${this.score}`, {
+      fontSize: '36px',
+      fill: '#ffffff'
+    });
+    scoreText.setOrigin(0.5);
+    
+    const messageText = this.add.text(width / 2, height / 2 + 60, 'All 5 Levels Complete!', {
+      fontSize: '28px',
+      fill: '#00ff00'
+    });
+    messageText.setOrigin(0.5);
+    
+    // Fireworks effect
+    for (let i = 0; i < 20; i++) {
+      this.time.delayedCall(i * 100, () => {
+        const x = Phaser.Math.Between(50, width - 50);
+        const y = Phaser.Math.Between(100, height - 100);
+        this.createFirework(x, y);
+      });
+    }
+    
+    // Go to game over scene after celebration
+    this.time.delayedCall(5000, () => {
+      this.scene.start('GameOverScene', { score: this.score, victory: true });
+    });
+  }
+
+  createFirework(x, y) {
+    for (let i = 0; i < 16; i++) {
+      const particle = this.add.graphics();
+      particle.fillStyle(Phaser.Display.Color.HSLToColor(Math.random(), 1, 0.5).color, 1);
+      particle.fillCircle(0, 0, 4);
+      particle.x = x;
+      particle.y = y;
+      
+      const angle = (i / 16) * Math.PI * 2;
+      const speed = Phaser.Math.Between(50, 150);
+      
+      this.tweens.add({
+        targets: particle,
+        x: x + Math.cos(angle) * speed,
+        y: y + Math.sin(angle) * speed,
+        alpha: 0,
+        duration: 1000,
+        onComplete: () => particle.destroy()
+      });
+    }
   }
 
   gameOver() {

@@ -36,6 +36,12 @@ class GameScene extends Phaser.Scene {
     this.setupUI();
     this.setupLevelUI();
     
+    // Reset level display and progress for fresh start
+    this.levelProgress = 0;
+    this.currentLevel = 1;
+    this.gameSpeed = this.baseSpeed;  // Reset to base speed for level 1
+    this.updateProgressBar(0);
+    
     // Start level timer
     this.levelStartTime = this.time.now;
     

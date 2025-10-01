@@ -4,7 +4,10 @@ import { GAME_CONFIG } from '../config';
 class GameScene extends Phaser.Scene {
   constructor() {
     super({ key: 'GameScene' });
-    
+  }
+
+  init() {
+    // Reset all game state when scene starts/restarts
     this.score = 0;
     this.combo = 0;
     this.lives = 3;
@@ -331,11 +334,18 @@ class GameScene extends Phaser.Scene {
   gameOver() {
     this.isGameOver = true;
     
+    // Clean up all tiles
     this.tiles.forEach(tile => {
-      tile.destroy();
-      if (tile.holdText) tile.holdText.destroy();
       if (tile.hitArea) tile.hitArea.destroy();
+      if (tile.holdText) tile.holdText.destroy();
+      tile.destroy();
     });
+    
+    // Clear the tiles array
+    this.tiles = [];
+    
+    // Clear any timers
+    this.time.removeAllEvents();
 
     this.scene.start('GameOverScene', { score: this.score });
   }

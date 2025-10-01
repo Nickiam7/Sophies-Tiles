@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { GAME_CONFIG } from '../config';
+import { TEXT_STYLES } from '../styles';
 
 class GameScene extends Phaser.Scene {
   constructor() {
@@ -55,14 +56,20 @@ class GameScene extends Phaser.Scene {
   }
 
   createHUD() {
-    // Create HUD background with high depth to render on top
+    // Create HUD background with gradient
     const hudBg = this.add.graphics();
-    hudBg.fillStyle(GAME_CONFIG.colors.hudBackground, 1);
+    hudBg.fillGradientStyle(0x151937, 0x151937, 0x0a0e27, 0x0a0e27, 0.95);
     hudBg.fillRect(0, 0, GAME_CONFIG.width, GAME_CONFIG.hudHeight);
     
-    // Add separator line
-    hudBg.lineStyle(2, 0x444444);
+    // Add glowing separator line
+    hudBg.lineStyle(2, 0x00ccff, 0.3);
     hudBg.lineBetween(0, GAME_CONFIG.hudHeight, GAME_CONFIG.width, GAME_CONFIG.hudHeight);
+    
+    // Add subtle shadow
+    const shadow = this.add.graphics();
+    shadow.fillGradientStyle(0x000000, 0x000000, 0x000000, 0x000000, 0.3);
+    shadow.fillRect(0, GAME_CONFIG.hudHeight, GAME_CONFIG.width, 10);
+    shadow.setDepth(99);
     
     // Set high depth so HUD renders above tiles
     hudBg.setDepth(100);
@@ -73,16 +80,23 @@ class GameScene extends Phaser.Scene {
     const gameplayStart = GAME_CONFIG.hudHeight;
     const gameplayEnd = GAME_CONFIG.height;
 
+    // Draw lane dividers with subtle gradient
     for (let i = 0; i < GAME_CONFIG.lanes; i++) {
       const x = i * laneWidth + laneWidth / 2;
       const lane = this.add.graphics();
-      lane.lineStyle(2, 0x444444);
+      lane.lineStyle(2, 0x151937, 0.3);
       lane.lineBetween(i * laneWidth, gameplayStart, i * laneWidth, gameplayEnd);
     }
 
+    // Modern hit zone with gradient
     const hitZone = this.add.graphics();
-    hitZone.fillStyle(0xff0000, 0.2);  // Red danger zone
-    hitZone.fillRect(0, gameplayEnd - 100, GAME_CONFIG.width, 100);
+    hitZone.fillGradientStyle(0xff3366, 0xff3366, 0xff0033, 0xff0033, 0.15);
+    hitZone.fillRect(0, gameplayEnd - 120, GAME_CONFIG.width, 120);
+    
+    // Add glowing border line at hit zone boundary
+    const hitLine = this.add.graphics();
+    hitLine.lineStyle(3, 0xff3366, 0.6);
+    hitLine.lineBetween(0, gameplayEnd - 120, GAME_CONFIG.width, gameplayEnd - 120);
   }
 
   setupInput() {
@@ -101,65 +115,53 @@ class GameScene extends Phaser.Scene {
   }
 
   setupUI() {
-    // Scale font sizes for tablet
-    const labelSize = '20px';
-    const valueSize = '36px';
-    
     // Score on left - label and value stacked
-    this.scoreLabel = this.add.text(80, 30, 'SCORE', {
-      fontSize: labelSize,
-      fill: '#aaaaaa'
-    });
+    this.scoreLabel = this.add.text(80, 30, 'SCORE', TEXT_STYLES.hudLabel);
     this.scoreLabel.setOrigin(0.5, 0);
     this.scoreLabel.setDepth(101);
+    this.scoreLabel.setShadow(0, 2, '#000000', 4, true, true);
     
-    this.scoreText = this.add.text(80, 65, '0', {
-      fontSize: valueSize,
-      fill: '#ffffff',
-      fontStyle: 'bold'
-    });
+    this.scoreText = this.add.text(80, 65, '0', TEXT_STYLES.hudValue);
     this.scoreText.setOrigin(0.5, 0);
     this.scoreText.setDepth(101);
+    this.scoreText.setShadow(0, 3, '#000000', 8, true, true);
 
     // Lives on right - label and value stacked
     const { width } = this.cameras.main;
-    this.livesLabel = this.add.text(width - 80, 30, 'LIVES', {
-      fontSize: labelSize,
-      fill: '#aaaaaa'
-    });
+    this.livesLabel = this.add.text(width - 80, 30, 'LIVES', TEXT_STYLES.hudLabel);
     this.livesLabel.setOrigin(0.5, 0);
     this.livesLabel.setDepth(101);
+    this.livesLabel.setShadow(0, 2, '#000000', 4, true, true);
     
     this.livesText = this.add.text(width - 80, 65, '3', {
-      fontSize: valueSize,
-      fill: '#ff6666',
-      fontStyle: 'bold'
+      ...TEXT_STYLES.hudValue,
+      fill: '#ff6b9d'
     });
     this.livesText.setOrigin(0.5, 0);
     this.livesText.setDepth(101);
+    this.livesText.setShadow(0, 3, '#ff0066', 10, true, true);
   }
 
   setupLevelUI() {
     const { width } = this.cameras.main;
     
     // Level indicator in HUD - scaled for tablet
-    this.levelText = this.add.text(width / 2, 15, `LEVEL ${this.currentLevel}`, {
-      fontSize: '28px',
-      fill: '#00ffff',
-      fontStyle: 'bold'
-    });
+    this.levelText = this.add.text(width / 2, 15, `LEVEL ${this.currentLevel}`, TEXT_STYLES.levelText);
     this.levelText.setOrigin(0.5, 0);
     this.levelText.setDepth(101);
+    this.levelText.setShadow(0, 3, '#000066', 10, true, true);
     
-    // Progress bar in HUD - wider for tablet
+    // Progress bar in HUD - wider for tablet with glow
     const progressBarWidth = 280;
     const progressBarHeight = 18;
     const progressBarX = width / 2 - progressBarWidth / 2;
     const progressBarY = 50;
     
     this.progressBarBg = this.add.graphics();
-    this.progressBarBg.fillStyle(0x333333, 0.8);
-    this.progressBarBg.fillRoundedRect(progressBarX, progressBarY, progressBarWidth, progressBarHeight, 5);
+    this.progressBarBg.fillStyle(0x151937, 0.9);
+    this.progressBarBg.fillRoundedRect(progressBarX, progressBarY, progressBarWidth, progressBarHeight, 9);
+    this.progressBarBg.lineStyle(2, 0x00ccff, 0.3);
+    this.progressBarBg.strokeRoundedRect(progressBarX, progressBarY, progressBarWidth, progressBarHeight, 9);
     this.progressBarBg.setDepth(101);
     
     // Progress bar fill
@@ -170,18 +172,16 @@ class GameScene extends Phaser.Scene {
     for (let i = 1; i < 4; i++) {
       const segmentX = progressBarX + (progressBarWidth * i / 4);
       const segment = this.add.graphics();
-      segment.lineStyle(2, 0x000000);
-      segment.lineBetween(segmentX, progressBarY, segmentX, progressBarY + progressBarHeight);
+      segment.lineStyle(1, 0x0a0e27, 0.5);
+      segment.lineBetween(segmentX, progressBarY + 2, segmentX, progressBarY + progressBarHeight - 2);
       segment.setDepth(102);
     }
 
     // Streak below progress bar
-    this.comboText = this.add.text(width / 2, 85, 'Streak: 0', {
-      fontSize: '24px',
-      fill: '#ffff00'
-    });
+    this.comboText = this.add.text(width / 2, 85, 'Streak: 0', TEXT_STYLES.streakText);
     this.comboText.setOrigin(0.5, 0);
     this.comboText.setDepth(101);
+    this.comboText.setShadow(0, 2, '#ff6600', 15, true, true);
     
     // Initialize progress bar with 0
     this.updateProgressBar(0);
@@ -198,10 +198,11 @@ class GameScene extends Phaser.Scene {
     const progressBarY = 50;
     
     this.progressBarFill.clear();
-    this.progressBarFill.fillStyle(0x00ff00, 1);
+    // Gradient fill for progress
+    this.progressBarFill.fillGradientStyle(0x00ff88, 0x00ff88, 0x00ccff, 0x00ccff, 1);
     const fillWidth = progressBarWidth * progress;
     if (fillWidth > 0) {
-      this.progressBarFill.fillRoundedRect(progressBarX, progressBarY, fillWidth, progressBarHeight, 5);
+      this.progressBarFill.fillRoundedRect(progressBarX, progressBarY, fillWidth, progressBarHeight, 9);
     }
   }
 
@@ -229,15 +230,19 @@ class GameScene extends Phaser.Scene {
     hitArea.setAlpha(0.01); // Almost invisible but still interactive
 
     const tile = this.add.graphics();
-    tile.fillStyle(color, 0.9);
-    tile.fillRoundedRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth - 10, tileHeight, 8);
+    // Add gradient effect to tiles
+    if (isLongTile) {
+      tile.fillGradientStyle(GAME_CONFIG.colors.blue, GAME_CONFIG.colors.blue, 0x0099cc, 0x0099cc, 0.95);
+    } else {
+      tile.fillGradientStyle(GAME_CONFIG.colors.green, GAME_CONFIG.colors.green, 0x00cc66, 0x00cc66, 0.95);
+    }
+    tile.fillRoundedRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth - 10, tileHeight, 12);
+    // Add subtle border
+    tile.lineStyle(2, isLongTile ? 0x00ffff : 0x00ffaa, 0.5);
+    tile.strokeRoundedRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth - 10, tileHeight, 12);
 
     if (isLongTile) {
-      const holdText = this.add.text(0, tileHeight/2, '⬆ HOLD ⬆', {
-        fontSize: '20px',
-        fill: '#ffffff',
-        fontStyle: 'bold'
-      });
+      const holdText = this.add.text(0, tileHeight/2, '⬆ HOLD ⬆', TEXT_STYLES.holdText);
       holdText.setOrigin(0.5);
       tile.holdText = holdText;
     }
@@ -367,9 +372,12 @@ class GameScene extends Phaser.Scene {
       this.celebrateStreakMilestone(this.combo);
     }
 
+    // Create glowing hit effect
     const hitEffect = this.add.graphics();
-    hitEffect.fillStyle(0xffffff, 0.8);
-    hitEffect.fillCircle(tile.x, tile.y + tile.tileHeight/2, 30);
+    hitEffect.fillStyle(tile.isLongTile ? 0x00ccff : 0x00ff88, 0.8);
+    hitEffect.fillCircle(tile.x, tile.y + tile.tileHeight/2, 35);
+    hitEffect.fillStyle(0xffffff, 0.5);
+    hitEffect.fillCircle(tile.x, tile.y + tile.tileHeight/2, 20);
 
     this.tweens.add({
       targets: hitEffect,
@@ -402,24 +410,16 @@ class GameScene extends Phaser.Scene {
     const message = streak >= 50 ? "LEGENDARY STREAK! 🌟" : messages[Math.floor(Math.random() * messages.length)];
     
     // Create celebration text
-    const celebrationText = this.add.text(width / 2, height / 2 - 100, `${streak} STREAK!`, {
-      fontSize: '48px',
-      fill: '#ffff00',
-      fontStyle: 'bold',
-      stroke: '#ff6600',
-      strokeThickness: 6
-    });
+    const celebrationText = this.add.text(width / 2, height / 2 - 100, `${streak} STREAK!`, TEXT_STYLES.celebrationTitle);
     celebrationText.setOrigin(0.5);
     celebrationText.setDepth(1000);
+    celebrationText.setShadow(0, 5, '#ff0066', 20, true, true);
     
     // Create encouraging message
-    const encourageText = this.add.text(width / 2, height / 2 - 40, message, {
-      fontSize: '28px',
-      fill: '#ffffff',
-      fontStyle: 'bold'
-    });
+    const encourageText = this.add.text(width / 2, height / 2 - 40, message, TEXT_STYLES.celebrationSubtitle);
     encourageText.setOrigin(0.5);
     encourageText.setDepth(1000);
+    encourageText.setShadow(0, 3, '#000000', 10, true, true);
     
     // Create particle burst effect
     for (let i = 0; i < 12; i++) {
@@ -543,10 +543,15 @@ class GameScene extends Phaser.Scene {
 
         const progressHeight = tile.holdProgress;
         tile.clear();
-        tile.fillStyle(GAME_CONFIG.colors.blue, 0.5);
-        tile.fillRoundedRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth - 10, tile.tileHeight, 8);
-        tile.fillStyle(0x00ffff, 0.9);
-        tile.fillRoundedRect(-GAME_CONFIG.tileWidth/2, tile.tileHeight - progressHeight, GAME_CONFIG.tileWidth - 10, progressHeight, 8);
+        // Base tile with gradient
+        tile.fillGradientStyle(0x006699, 0x006699, 0x004466, 0x004466, 0.5);
+        tile.fillRoundedRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth - 10, tile.tileHeight, 12);
+        // Progress fill with glow
+        tile.fillGradientStyle(0x00ffff, 0x00ffff, 0x00ccff, 0x00ccff, 1);
+        tile.fillRoundedRect(-GAME_CONFIG.tileWidth/2, tile.tileHeight - progressHeight, GAME_CONFIG.tileWidth - 10, progressHeight, 12);
+        // Glowing border
+        tile.lineStyle(2, 0x00ffff, 0.8);
+        tile.strokeRoundedRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth - 10, tile.tileHeight, 12);
       }
 
       if (tile.y > GAME_CONFIG.height) {
@@ -574,14 +579,12 @@ class GameScene extends Phaser.Scene {
     // Level complete message
     const { width, height } = this.cameras.main;
     const levelCompleteText = this.add.text(width / 2, height / 2 - 100, 'LEVEL COMPLETE!', {
-      fontSize: '48px',
-      fill: '#00ff00',
-      fontStyle: 'bold',
-      stroke: '#ffffff',
-      strokeThickness: 4
+      ...TEXT_STYLES.celebrationTitle,
+      fill: '#00ff88'
     });
     levelCompleteText.setOrigin(0.5);
     levelCompleteText.setDepth(1001);
+    levelCompleteText.setShadow(0, 5, '#00ff00', 25, true, true);
     
     // Animate level complete text
     this.tweens.add({
@@ -616,14 +619,12 @@ class GameScene extends Phaser.Scene {
     const showCountdown = () => {
       if (countdownIndex < countdownValues.length) {
         const countdownText = this.add.text(width / 2, height / 2, countdownValues[countdownIndex], {
-          fontSize: '72px',
-          fill: countdownIndex === 3 ? '#00ff00' : '#ffffff',
-          fontStyle: 'bold',
-          stroke: '#000000',
-          strokeThickness: 6
+          ...TEXT_STYLES.title,
+          fill: countdownIndex === 3 ? '#00ff88' : '#ffffff'
         });
         countdownText.setOrigin(0.5);
         countdownText.setDepth(1001);
+        countdownText.setShadow(0, 8, countdownIndex === 3 ? '#00ff00' : '#000000', 20, true, true);
         
         this.tweens.add({
           targets: countdownText,
@@ -658,7 +659,7 @@ class GameScene extends Phaser.Scene {
     this.cameras.main.shake(200, 0.01);
 
     const missEffect = this.add.graphics();
-    missEffect.fillStyle(GAME_CONFIG.colors.miss, 0.3);
+    missEffect.fillGradientStyle(GAME_CONFIG.colors.miss, GAME_CONFIG.colors.miss, 0xff0033, 0xff0033, 0.4);
     missEffect.fillRect(0, GAME_CONFIG.hudHeight, GAME_CONFIG.width, GAME_CONFIG.gameplayHeight);
 
     this.tweens.add({

@@ -15,11 +15,15 @@ export const GAME_CONFIG = {
   tileSpeed: 300,  // Adjusted for larger screen
   spawnInterval: 1000,
   colors: {
-    green: 0x00ff00,
-    blue: 0x0099ff,
-    background: 0x1a1a1a,
-    hudBackground: 0x2a2a2a,
-    miss: 0xff0000
+    green: 0x00ff88,
+    blue: 0x00ccff,
+    background: 0x0a0e27,
+    hudBackground: 0x151937,
+    miss: 0xff3366,
+    accent: 0xff6b9d,
+    gold: 0xffd700,
+    purple: 0x9b59ff,
+    darkPurple: 0x2e1a47
   }
 };
 

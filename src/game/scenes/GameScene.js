@@ -23,7 +23,7 @@ class GameScene extends Phaser.Scene {
     this.currentLevel = 1;
     this.maxLevel = 5;
     this.levelDuration = 20000; // 20 seconds per level
-    this.levelStartTime = 0;
+    this.levelStartTime = null; // Set to null, will be initialized in create()
     this.levelProgress = 0;
     this.isTransitioningLevel = false;
     this.baseSpeed = GAME_CONFIG.tileSpeed;
@@ -31,18 +31,48 @@ class GameScene extends Phaser.Scene {
   }
   
   cleanupUI() {
-    // Clear all children from the scene to ensure complete reset
-    this.children.removeAll();
+    // Destroy existing UI elements if they exist
+    if (this.levelText) {
+      this.levelText.destroy();
+      this.levelText = null;
+    }
+    if (this.progressBarFill) {
+      this.progressBarFill.clear();
+      this.progressBarFill.destroy();
+      this.progressBarFill = null;
+    }
+    if (this.progressBarBg) {
+      this.progressBarBg.clear();
+      this.progressBarBg.destroy();
+      this.progressBarBg = null;
+    }
+    if (this.comboText) {
+      this.comboText.destroy();
+      this.comboText = null;
+    }
+    if (this.scoreText) {
+      this.scoreText.destroy();
+      this.scoreText = null;
+    }
+    if (this.scoreLabel) {
+      this.scoreLabel.destroy();
+      this.scoreLabel = null;
+    }
+    if (this.livesText) {
+      this.livesText.destroy();
+      this.livesText = null;
+    }
+    if (this.livesLabel) {
+      this.livesLabel.destroy();
+      this.livesLabel = null;
+    }
     
-    // Reset all UI references
-    this.levelText = null;
-    this.progressBarFill = null;
-    this.progressBarBg = null;
-    this.comboText = null;
-    this.scoreText = null;
-    this.scoreLabel = null;
-    this.livesText = null;
-    this.livesLabel = null;
+    // Clear all remaining graphics and text objects
+    this.children.list.forEach(child => {
+      if (child && (child.type === 'Graphics' || child.type === 'Text')) {
+        child.destroy();
+      }
+    });
   }
 
   create() {
@@ -52,19 +82,29 @@ class GameScene extends Phaser.Scene {
     // Clean up any existing UI elements first
     this.cleanupUI();
     
+    // Force reset ALL level values
+    this.levelProgress = 0;
+    this.currentLevel = 1;
+    this.gameSpeed = this.baseSpeed;
+    this.levelStartTime = null;
+    this.isTransitioningLevel = false;
+    
     this.createHUD();
     this.setupLanes();
     this.setupInput();
     this.setupUI();
     this.setupLevelUI();
     
-    // Reset level display and progress for fresh start
+    // Ensure progress bar starts completely empty
     this.levelProgress = 0;
-    this.currentLevel = 1;
-    this.gameSpeed = this.baseSpeed;  // Reset to base speed for level 1
+    if (this.progressBarFill) {
+      this.progressBarFill.clear();
+    }
     
-    // Start level timer
-    this.levelStartTime = this.time.now;
+    // Set level start time AFTER everything is set up
+    this.time.delayedCall(100, () => {
+      this.levelStartTime = this.time.now;
+    });
     
     // Start spawning tiles
     this.time.addEvent({
@@ -203,8 +243,11 @@ class GameScene extends Phaser.Scene {
     this.comboText.setDepth(101);
     this.comboText.setShadow(0, 2, '#ff6600', 15, true, true);
     
-    // Force clear the progress bar to ensure it starts empty
-    this.progressBarFill.clear();
+    // Force clear the progress bar
+    this.levelProgress = 0;
+    if (this.progressBarFill) {
+      this.progressBarFill.clear();
+    }
   }
 
   updateProgressBar(progress) {
@@ -220,11 +263,12 @@ class GameScene extends Phaser.Scene {
     // Always clear the progress bar first
     this.progressBarFill.clear();
     
-    // Only draw if there's actual progress
-    if (progress > 0) {
+    // Clamp progress between 0 and 1 and only draw if there's actual progress
+    const clampedProgress = Math.max(0, Math.min(1, progress));
+    if (clampedProgress > 0 && clampedProgress <= 1) {
       // Gradient fill for progress
       this.progressBarFill.fillGradientStyle(0x00ff88, 0x00ff88, 0x00ccff, 0x00ccff, 1);
-      const fillWidth = progressBarWidth * progress;
+      const fillWidth = progressBarWidth * clampedProgress;
       this.progressBarFill.fillRect(progressBarX, progressBarY, fillWidth, progressBarHeight);
     }
   }
@@ -528,8 +572,8 @@ class GameScene extends Phaser.Scene {
   update() {
     if (this.isGameOver) return;
 
-    // Update level progress
-    if (!this.isTransitioningLevel) {
+    // Update level progress only if levelStartTime has been set
+    if (!this.isTransitioningLevel && this.levelStartTime !== null) {
       const elapsed = this.time.now - this.levelStartTime;
       this.levelProgress = Math.min(elapsed / this.levelDuration, 1);
       this.updateProgressBar(this.levelProgress);
@@ -784,6 +828,10 @@ class GameScene extends Phaser.Scene {
   gameOver() {
     this.isGameOver = true;
 
+    // Stop update loop immediately
+    this.levelStartTime = null;
+    this.levelProgress = 0;
+
     // Clean up all tiles
     this.tiles.forEach(tile => {
       if (tile.hitArea) tile.hitArea.destroy();
@@ -796,9 +844,6 @@ class GameScene extends Phaser.Scene {
 
     // Clear any timers
     this.time.removeAllEvents();
-    
-    // Clean up UI before transitioning
-    this.cleanupUI();
 
     this.scene.start('GameOverScene', { score: this.score });
   }

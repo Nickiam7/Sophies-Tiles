@@ -8,6 +8,11 @@ class GameOverScene extends Phaser.Scene {
 
   init(data) {
     this.finalScore = data.score || 0;
+    
+    // Completely stop the GameScene to ensure clean restart
+    if (this.scene.get('GameScene')) {
+      this.scene.stop('GameScene');
+    }
   }
 
   create() {
@@ -92,7 +97,14 @@ class GameOverScene extends Phaser.Scene {
           // Fade out before scene transition
           this.cameras.main.fadeOut(300, 0, 0, 0);
           this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
-            this.scene.start('GameScene');
+            // Get the game scene and restart it completely
+            const gameScene = this.scene.get('GameScene');
+            if (gameScene && gameScene.scene) {
+              gameScene.scene.restart();
+            } else {
+              this.scene.start('GameScene');
+            }
+            this.scene.stop('GameOverScene');
           });
         }
       });
@@ -152,6 +164,10 @@ class GameOverScene extends Phaser.Scene {
           // Fade out before scene transition
           this.cameras.main.fadeOut(300, 0, 0, 0);
           this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+            // Stop GameScene when going to menu
+            if (this.scene.get('GameScene')) {
+              this.scene.stop('GameScene');
+            }
             this.scene.start('MenuScene');
           });
         }

@@ -8,6 +8,19 @@ class MenuScene extends Phaser.Scene {
 
   create() {
     const { width, height } = this.cameras.main
+    
+    // Fade in effect
+    this.cameras.main.fadeIn(300, 0, 0, 0)
+    
+    // Add subtle border/glow around the entire scene
+    const border = this.add.graphics()
+    border.lineStyle(3, 0x00ccff, 0.3)
+    border.strokeRect(10, 10, width - 20, height - 20)
+    
+    // Add inner glow
+    const innerGlow = this.add.graphics()
+    innerGlow.lineStyle(2, 0x9b59ff, 0.2)
+    innerGlow.strokeRect(15, 15, width - 30, height - 30)
 
     const title = this.add.text(width / 2, height / 3, "Sophie's Tiles", TEXT_STYLES.title)
     title.setOrigin(0.5)
@@ -22,7 +35,7 @@ class MenuScene extends Phaser.Scene {
     
     // Draw gradient button
     buttonBg.fillGradientStyle(0x00ff88, 0x00ff88, 0x00cc66, 0x00cc66, 1)
-    buttonBg.fillRoundedRect(buttonX, buttonY, buttonWidth, buttonHeight, 20)
+    buttonBg.fillRect(buttonX, buttonY, buttonWidth, buttonHeight)
     
     const playButton = this.add.text(width / 2, height / 2, 'PLAY', TEXT_STYLES.button)
     playButton.setOrigin(0.5)
@@ -30,21 +43,45 @@ class MenuScene extends Phaser.Scene {
     playButton.setInteractive({ useHandCursor: true })
 
     playButton.on('pointerover', () => {
-      playButton.setScale(1.1)
+      this.tweens.add({
+        targets: playButton,
+        scale: 1.1,
+        duration: 200,
+        ease: 'Power2'
+      })
       buttonBg.clear()
       buttonBg.fillGradientStyle(0x00ffaa, 0x00ffaa, 0x00dd77, 0x00dd77, 1)
-      buttonBg.fillRoundedRect(buttonX, buttonY, buttonWidth, buttonHeight, 20)
+      buttonBg.fillRect(buttonX, buttonY, buttonWidth, buttonHeight)
     })
 
     playButton.on('pointerout', () => {
-      playButton.setScale(1)
+      this.tweens.add({
+        targets: playButton,
+        scale: 1,
+        duration: 200,
+        ease: 'Power2'
+      })
       buttonBg.clear()
       buttonBg.fillGradientStyle(0x00ff88, 0x00ff88, 0x00cc66, 0x00cc66, 1)
-      buttonBg.fillRoundedRect(buttonX, buttonY, buttonWidth, buttonHeight, 20)
+      buttonBg.fillRect(buttonX, buttonY, buttonWidth, buttonHeight)
     })
 
     playButton.on('pointerdown', () => {
-      this.scene.start('GameScene')
+      // Press animation
+      this.tweens.add({
+        targets: playButton,
+        scale: 0.95,
+        duration: 100,
+        yoyo: true,
+        ease: 'Power2',
+        onComplete: () => {
+          // Fade out before scene transition
+          this.cameras.main.fadeOut(300, 0, 0, 0)
+          this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+            this.scene.start('GameScene')
+          })
+        }
+      })
     })
 
     const instructions = this.add.text(width / 2, height * 0.75,

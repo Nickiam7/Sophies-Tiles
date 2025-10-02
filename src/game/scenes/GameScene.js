@@ -19,7 +19,7 @@ class GameScene extends Phaser.Scene {
     this.spawnTimer = 0;
     this.holdingTiles = new Map();
     
-    // Level system
+    // Level system - ensure everything is reset
     this.currentLevel = 1;
     this.maxLevel = 5;
     this.levelDuration = 20000; // 20 seconds per level
@@ -29,8 +29,29 @@ class GameScene extends Phaser.Scene {
     this.baseSpeed = GAME_CONFIG.tileSpeed;
     this.speedMultiplier = 1.25; // 25% speed increase per level
   }
+  
+  cleanupUI() {
+    // Clear all children from the scene to ensure complete reset
+    this.children.removeAll();
+    
+    // Reset all UI references
+    this.levelText = null;
+    this.progressBarFill = null;
+    this.progressBarBg = null;
+    this.comboText = null;
+    this.scoreText = null;
+    this.scoreLabel = null;
+    this.livesText = null;
+    this.livesLabel = null;
+  }
 
   create() {
+    // Fade in effect
+    this.cameras.main.fadeIn(300, 0, 0, 0);
+    
+    // Clean up any existing UI elements first
+    this.cleanupUI();
+    
     this.createHUD();
     this.setupLanes();
     this.setupInput();
@@ -41,7 +62,6 @@ class GameScene extends Phaser.Scene {
     this.levelProgress = 0;
     this.currentLevel = 1;
     this.gameSpeed = this.baseSpeed;  // Reset to base speed for level 1
-    this.updateProgressBar(0);
     
     // Start level timer
     this.levelStartTime = this.time.now;
@@ -145,8 +165,8 @@ class GameScene extends Phaser.Scene {
   setupLevelUI() {
     const { width } = this.cameras.main;
     
-    // Level indicator in HUD - scaled for tablet
-    this.levelText = this.add.text(width / 2, 15, `LEVEL ${this.currentLevel}`, TEXT_STYLES.levelText);
+    // Level indicator in HUD - scaled for tablet - always start at LEVEL 1
+    this.levelText = this.add.text(width / 2, 15, 'LEVEL 1', TEXT_STYLES.levelText);
     this.levelText.setOrigin(0.5, 0);
     this.levelText.setDepth(101);
     this.levelText.setShadow(0, 3, '#000066', 10, true, true);
@@ -159,9 +179,9 @@ class GameScene extends Phaser.Scene {
     
     this.progressBarBg = this.add.graphics();
     this.progressBarBg.fillStyle(0x151937, 0.9);
-    this.progressBarBg.fillRoundedRect(progressBarX, progressBarY, progressBarWidth, progressBarHeight, 9);
+    this.progressBarBg.fillRect(progressBarX, progressBarY, progressBarWidth, progressBarHeight);
     this.progressBarBg.lineStyle(2, 0x00ccff, 0.3);
-    this.progressBarBg.strokeRoundedRect(progressBarX, progressBarY, progressBarWidth, progressBarHeight, 9);
+    this.progressBarBg.strokeRect(progressBarX, progressBarY, progressBarWidth, progressBarHeight);
     this.progressBarBg.setDepth(101);
     
     // Progress bar fill
@@ -183,8 +203,8 @@ class GameScene extends Phaser.Scene {
     this.comboText.setDepth(101);
     this.comboText.setShadow(0, 2, '#ff6600', 15, true, true);
     
-    // Initialize progress bar with 0
-    this.updateProgressBar(0);
+    // Force clear the progress bar to ensure it starts empty
+    this.progressBarFill.clear();
   }
 
   updateProgressBar(progress) {
@@ -197,12 +217,15 @@ class GameScene extends Phaser.Scene {
     const progressBarX = width / 2 - progressBarWidth / 2;
     const progressBarY = 50;
     
+    // Always clear the progress bar first
     this.progressBarFill.clear();
-    // Gradient fill for progress
-    this.progressBarFill.fillGradientStyle(0x00ff88, 0x00ff88, 0x00ccff, 0x00ccff, 1);
-    const fillWidth = progressBarWidth * progress;
-    if (fillWidth > 0) {
-      this.progressBarFill.fillRoundedRect(progressBarX, progressBarY, fillWidth, progressBarHeight, 9);
+    
+    // Only draw if there's actual progress
+    if (progress > 0) {
+      // Gradient fill for progress
+      this.progressBarFill.fillGradientStyle(0x00ff88, 0x00ff88, 0x00ccff, 0x00ccff, 1);
+      const fillWidth = progressBarWidth * progress;
+      this.progressBarFill.fillRect(progressBarX, progressBarY, fillWidth, progressBarHeight);
     }
   }
 
@@ -236,10 +259,10 @@ class GameScene extends Phaser.Scene {
     } else {
       tile.fillGradientStyle(GAME_CONFIG.colors.green, GAME_CONFIG.colors.green, 0x00cc66, 0x00cc66, 0.95);
     }
-    tile.fillRoundedRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth - 10, tileHeight, 12);
+    tile.fillRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth - 10, tileHeight);
     // Add subtle border
     tile.lineStyle(2, isLongTile ? 0x00ffff : 0x00ffaa, 0.5);
-    tile.strokeRoundedRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth - 10, tileHeight, 12);
+    tile.strokeRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth - 10, tileHeight);
 
     if (isLongTile) {
       const holdText = this.add.text(0, tileHeight/2, '⬆ HOLD ⬆', TEXT_STYLES.holdText);
@@ -545,13 +568,13 @@ class GameScene extends Phaser.Scene {
         tile.clear();
         // Base tile with gradient
         tile.fillGradientStyle(0x006699, 0x006699, 0x004466, 0x004466, 0.5);
-        tile.fillRoundedRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth - 10, tile.tileHeight, 12);
+        tile.fillRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth - 10, tile.tileHeight);
         // Progress fill with glow
         tile.fillGradientStyle(0x00ffff, 0x00ffff, 0x00ccff, 0x00ccff, 1);
-        tile.fillRoundedRect(-GAME_CONFIG.tileWidth/2, tile.tileHeight - progressHeight, GAME_CONFIG.tileWidth - 10, progressHeight, 12);
+        tile.fillRect(-GAME_CONFIG.tileWidth/2, tile.tileHeight - progressHeight, GAME_CONFIG.tileWidth - 10, progressHeight);
         // Glowing border
         tile.lineStyle(2, 0x00ffff, 0.8);
-        tile.strokeRoundedRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth - 10, tile.tileHeight, 12);
+        tile.strokeRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth - 10, tile.tileHeight);
       }
 
       if (tile.y > GAME_CONFIG.height) {
@@ -773,6 +796,9 @@ class GameScene extends Phaser.Scene {
 
     // Clear any timers
     this.time.removeAllEvents();
+    
+    // Clean up UI before transitioning
+    this.cleanupUI();
 
     this.scene.start('GameOverScene', { score: this.score });
   }

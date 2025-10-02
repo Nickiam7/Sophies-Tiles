@@ -12,6 +12,19 @@ class GameOverScene extends Phaser.Scene {
 
   create() {
     const { width, height } = this.cameras.main;
+    
+    // Fade in effect
+    this.cameras.main.fadeIn(300, 0, 0, 0);
+    
+    // Add subtle border/glow around the entire scene
+    const border = this.add.graphics();
+    border.lineStyle(3, 0xff3366, 0.3);
+    border.strokeRect(10, 10, width - 20, height - 20);
+    
+    // Add inner glow
+    const innerGlow = this.add.graphics();
+    innerGlow.lineStyle(2, 0xff6b9d, 0.2);
+    innerGlow.strokeRect(15, 15, width - 30, height - 30);
 
     const gameOverText = this.add.text(width / 2, height / 3, 'GAME OVER', {
       ...TEXT_STYLES.title,
@@ -36,7 +49,7 @@ class GameOverScene extends Phaser.Scene {
     const retryY = height * 0.65 - retryHeight / 2;
     
     retryBg.fillGradientStyle(0x00ccff, 0x00ccff, 0x0099cc, 0x0099cc, 1);
-    retryBg.fillRoundedRect(retryX, retryY, retryWidth, retryHeight, 20);
+    retryBg.fillRect(retryX, retryY, retryWidth, retryHeight);
     
     const retryButton = this.add.text(width / 2, height * 0.65, 'RETRY', TEXT_STYLES.button);
     retryButton.setOrigin(0.5);
@@ -44,21 +57,45 @@ class GameOverScene extends Phaser.Scene {
     retryButton.setInteractive({ useHandCursor: true });
 
     retryButton.on('pointerover', () => {
-      retryButton.setScale(1.1);
+      this.tweens.add({
+        targets: retryButton,
+        scale: 1.1,
+        duration: 200,
+        ease: 'Power2'
+      });
       retryBg.clear();
       retryBg.fillGradientStyle(0x33ddff, 0x33ddff, 0x00aadd, 0x00aadd, 1);
-      retryBg.fillRoundedRect(retryX, retryY, retryWidth, retryHeight, 20);
+      retryBg.fillRect(retryX, retryY, retryWidth, retryHeight);
     });
 
     retryButton.on('pointerout', () => {
-      retryButton.setScale(1);
+      this.tweens.add({
+        targets: retryButton,
+        scale: 1,
+        duration: 200,
+        ease: 'Power2'
+      });
       retryBg.clear();
       retryBg.fillGradientStyle(0x00ccff, 0x00ccff, 0x0099cc, 0x0099cc, 1);
-      retryBg.fillRoundedRect(retryX, retryY, retryWidth, retryHeight, 20);
+      retryBg.fillRect(retryX, retryY, retryWidth, retryHeight);
     });
 
     retryButton.on('pointerdown', () => {
-      this.scene.start('GameScene');
+      // Press animation
+      this.tweens.add({
+        targets: retryButton,
+        scale: 0.95,
+        duration: 100,
+        yoyo: true,
+        ease: 'Power2',
+        onComplete: () => {
+          // Fade out before scene transition
+          this.cameras.main.fadeOut(300, 0, 0, 0);
+          this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+            this.scene.start('GameScene');
+          });
+        }
+      });
     });
 
     // Menu button with gradient
@@ -69,7 +106,7 @@ class GameOverScene extends Phaser.Scene {
     const menuY = height * 0.8 - menuHeight / 2;
     
     menuBg.fillGradientStyle(0x9b59ff, 0x9b59ff, 0x7744cc, 0x7744cc, 1);
-    menuBg.fillRoundedRect(menuX, menuY, menuWidth, menuHeight, 16);
+    menuBg.fillRect(menuX, menuY, menuWidth, menuHeight);
     
     const menuButton = this.add.text(width / 2, height * 0.8, 'MAIN MENU', {
       ...TEXT_STYLES.button,
@@ -80,21 +117,45 @@ class GameOverScene extends Phaser.Scene {
     menuButton.setInteractive({ useHandCursor: true });
 
     menuButton.on('pointerover', () => {
-      menuButton.setScale(1.05);
+      this.tweens.add({
+        targets: menuButton,
+        scale: 1.05,
+        duration: 200,
+        ease: 'Power2'
+      });
       menuBg.clear();
       menuBg.fillGradientStyle(0xb47fff, 0xb47fff, 0x8855dd, 0x8855dd, 1);
-      menuBg.fillRoundedRect(menuX, menuY, menuWidth, menuHeight, 16);
+      menuBg.fillRect(menuX, menuY, menuWidth, menuHeight);
     });
 
     menuButton.on('pointerout', () => {
-      menuButton.setScale(1);
+      this.tweens.add({
+        targets: menuButton,
+        scale: 1,
+        duration: 200,
+        ease: 'Power2'
+      });
       menuBg.clear();
       menuBg.fillGradientStyle(0x9b59ff, 0x9b59ff, 0x7744cc, 0x7744cc, 1);
-      menuBg.fillRoundedRect(menuX, menuY, menuWidth, menuHeight, 16);
+      menuBg.fillRect(menuX, menuY, menuWidth, menuHeight);
     });
 
     menuButton.on('pointerdown', () => {
-      this.scene.start('MenuScene');
+      // Press animation
+      this.tweens.add({
+        targets: menuButton,
+        scale: 0.95,
+        duration: 100,
+        yoyo: true,
+        ease: 'Power2',
+        onComplete: () => {
+          // Fade out before scene transition
+          this.cameras.main.fadeOut(300, 0, 0, 0);
+          this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+            this.scene.start('MenuScene');
+          });
+        }
+      });
     });
   }
 }

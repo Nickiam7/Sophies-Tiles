@@ -7,7 +7,6 @@ class PreloadScene extends Phaser.Scene {
   }
 
   preload() {
-    // Set background color
     this.cameras.main.setBackgroundColor(GAME_CONFIG.colors.background)
     this.createLoadingBar()
   }
@@ -15,13 +14,11 @@ class PreloadScene extends Phaser.Scene {
   createLoadingBar() {
     const width = this.cameras.main.width
     const height = this.cameras.main.height
-    
-    // Add subtle border/glow around the entire scene
+
     const border = this.add.graphics()
     border.lineStyle(3, 0x00ccff, 0.3)
     border.strokeRect(10, 10, width - 20, height - 20)
-    
-    // Add inner glow
+
     const innerGlow = this.add.graphics()
     innerGlow.lineStyle(2, 0x9b59ff, 0.2)
     innerGlow.strokeRect(15, 15, width - 30, height - 30)
@@ -58,7 +55,6 @@ class PreloadScene extends Phaser.Scene {
   }
 
   create() {
-    // Fade out before transitioning
     this.cameras.main.fadeOut(300, 0, 0, 0)
     this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
       this.scene.start('MenuScene')

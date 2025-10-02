@@ -343,8 +343,22 @@ class GameScene extends Phaser.Scene {
         this.score += Math.floor(20 * progress);
 
         if (progress >= 0.8) {
+          // Store previous combo to check for milestone crossing
+          const previousCombo = this.combo;
           this.combo++;
-          this.hitTile(tile);
+          
+          // Check if we crossed any milestone
+          const previousMilestone = Math.floor(previousCombo / 10);
+          const currentMilestone = Math.floor(this.combo / 10);
+          
+          if (currentMilestone > previousMilestone) {
+            this.celebrateStreakMilestone(currentMilestone * 10);
+          }
+          
+          // Now hit the tile (without incrementing combo again)
+          tile.isHit = true;
+          this.createModernHitEffect(tile, 20);
+          this.animateTileDestruction(tile);
         } else {
           this.combo = 0;
         }
@@ -361,8 +375,22 @@ class GameScene extends Phaser.Scene {
         this.score += Math.floor(20 * progress);
 
         if (progress >= 0.8) {
+          // Store previous combo to check for milestone crossing
+          const previousCombo = this.combo;
           this.combo++;
-          this.hitTile(tile);
+          
+          // Check if we crossed any milestone
+          const previousMilestone = Math.floor(previousCombo / 10);
+          const currentMilestone = Math.floor(this.combo / 10);
+          
+          if (currentMilestone > previousMilestone) {
+            this.celebrateStreakMilestone(currentMilestone * 10);
+          }
+          
+          // Now hit the tile (without incrementing combo again)
+          tile.isHit = true;
+          this.createModernHitEffect(tile, 20);
+          this.animateTileDestruction(tile);
         } else {
           this.combo = 0;
         }
@@ -416,8 +444,22 @@ class GameScene extends Phaser.Scene {
       this.score += Math.floor(20 * progress);
 
       if (progress >= 0.8) {
+        // Store previous combo to check for milestone crossing
+        const previousCombo = this.combo;
         this.combo++;
-        this.hitTile(holdingTile);
+        
+        // Check if we crossed any milestone
+        const previousMilestone = Math.floor(previousCombo / 10);
+        const currentMilestone = Math.floor(this.combo / 10);
+        
+        if (currentMilestone > previousMilestone) {
+          this.celebrateStreakMilestone(currentMilestone * 10);
+        }
+        
+        // Now hit the tile
+        holdingTile.isHit = true;
+        this.createModernHitEffect(holdingTile, 20);
+        this.animateTileDestruction(holdingTile);
       } else {
         this.combo = 0;
       }
@@ -433,11 +475,18 @@ class GameScene extends Phaser.Scene {
     tile.isHit = true;
     const points = 10 * Math.max(1, Math.floor(this.combo / 5));
     this.score += points;
+    
+    // Store previous combo to check for milestone crossing
+    const previousCombo = this.combo;
     this.combo++;
 
-    // Check for streak milestones (every 10)
-    if (this.combo % 10 === 0) {
-      this.celebrateStreakMilestone(this.combo);
+    // Check if we crossed any milestone (every 10)
+    const previousMilestone = Math.floor(previousCombo / 10);
+    const currentMilestone = Math.floor(this.combo / 10);
+    
+    if (currentMilestone > previousMilestone) {
+      // We crossed a milestone, celebrate the milestone we crossed
+      this.celebrateStreakMilestone(currentMilestone * 10);
     }
 
     // Create modern hit effects

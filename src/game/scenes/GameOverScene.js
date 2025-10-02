@@ -56,12 +56,15 @@ class GameOverScene extends Phaser.Scene {
     retryBg.fillGradientStyle(0x00ccff, 0x00ccff, 0x0099cc, 0x0099cc, 1);
     retryBg.fillRect(retryX, retryY, retryWidth, retryHeight);
     
+    // Create invisible hitbox for entire button area
+    const retryButtonHitArea = this.add.rectangle(width / 2, height * 0.65, retryWidth, retryHeight);
+    retryButtonHitArea.setInteractive({ useHandCursor: true });
+    
     const retryButton = this.add.text(width / 2, height * 0.65, 'RETRY', TEXT_STYLES.button);
     retryButton.setOrigin(0.5);
     retryButton.setShadow(0, 4, '#000066', 12, true, true);
-    retryButton.setInteractive({ useHandCursor: true });
 
-    retryButton.on('pointerover', () => {
+    retryButtonHitArea.on('pointerover', () => {
       this.tweens.add({
         targets: retryButton,
         scale: 1.1,
@@ -73,7 +76,7 @@ class GameOverScene extends Phaser.Scene {
       retryBg.fillRect(retryX, retryY, retryWidth, retryHeight);
     });
 
-    retryButton.on('pointerout', () => {
+    retryButtonHitArea.on('pointerout', () => {
       this.tweens.add({
         targets: retryButton,
         scale: 1,
@@ -85,7 +88,7 @@ class GameOverScene extends Phaser.Scene {
       retryBg.fillRect(retryX, retryY, retryWidth, retryHeight);
     });
 
-    retryButton.on('pointerdown', () => {
+    retryButtonHitArea.on('pointerdown', () => {
       // Press animation
       this.tweens.add({
         targets: retryButton,
@@ -120,15 +123,18 @@ class GameOverScene extends Phaser.Scene {
     menuBg.fillGradientStyle(0x9b59ff, 0x9b59ff, 0x7744cc, 0x7744cc, 1);
     menuBg.fillRect(menuX, menuY, menuWidth, menuHeight);
     
+    // Create invisible hitbox for entire button area
+    const menuButtonHitArea = this.add.rectangle(width / 2, height * 0.8, menuWidth, menuHeight);
+    menuButtonHitArea.setInteractive({ useHandCursor: true });
+    
     const menuButton = this.add.text(width / 2, height * 0.8, 'MAIN MENU', {
       ...TEXT_STYLES.button,
       fontSize: '36px'
     });
     menuButton.setOrigin(0.5);
     menuButton.setShadow(0, 3, '#4422aa', 10, true, true);
-    menuButton.setInteractive({ useHandCursor: true });
 
-    menuButton.on('pointerover', () => {
+    menuButtonHitArea.on('pointerover', () => {
       this.tweens.add({
         targets: menuButton,
         scale: 1.05,
@@ -140,7 +146,7 @@ class GameOverScene extends Phaser.Scene {
       menuBg.fillRect(menuX, menuY, menuWidth, menuHeight);
     });
 
-    menuButton.on('pointerout', () => {
+    menuButtonHitArea.on('pointerout', () => {
       this.tweens.add({
         targets: menuButton,
         scale: 1,
@@ -152,7 +158,7 @@ class GameOverScene extends Phaser.Scene {
       menuBg.fillRect(menuX, menuY, menuWidth, menuHeight);
     });
 
-    menuButton.on('pointerdown', () => {
+    menuButtonHitArea.on('pointerdown', () => {
       // Press animation
       this.tweens.add({
         targets: menuButton,

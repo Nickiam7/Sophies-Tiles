@@ -37,12 +37,15 @@ class MenuScene extends Phaser.Scene {
     buttonBg.fillGradientStyle(0x00ff88, 0x00ff88, 0x00cc66, 0x00cc66, 1)
     buttonBg.fillRect(buttonX, buttonY, buttonWidth, buttonHeight)
     
+    // Create invisible hitbox for entire button area
+    const playButtonHitArea = this.add.rectangle(width / 2, height / 2, buttonWidth, buttonHeight)
+    playButtonHitArea.setInteractive({ useHandCursor: true })
+    
     const playButton = this.add.text(width / 2, height / 2, 'PLAY', TEXT_STYLES.button)
     playButton.setOrigin(0.5)
     playButton.setShadow(0, 4, '#000000', 10, true, true)
-    playButton.setInteractive({ useHandCursor: true })
 
-    playButton.on('pointerover', () => {
+    playButtonHitArea.on('pointerover', () => {
       this.tweens.add({
         targets: playButton,
         scale: 1.1,
@@ -54,7 +57,7 @@ class MenuScene extends Phaser.Scene {
       buttonBg.fillRect(buttonX, buttonY, buttonWidth, buttonHeight)
     })
 
-    playButton.on('pointerout', () => {
+    playButtonHitArea.on('pointerout', () => {
       this.tweens.add({
         targets: playButton,
         scale: 1,
@@ -66,7 +69,7 @@ class MenuScene extends Phaser.Scene {
       buttonBg.fillRect(buttonX, buttonY, buttonWidth, buttonHeight)
     })
 
-    playButton.on('pointerdown', () => {
+    playButtonHitArea.on('pointerdown', () => {
       // Press animation
       this.tweens.add({
         targets: playButton,

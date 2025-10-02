@@ -292,7 +292,7 @@ class GameScene extends Phaser.Scene {
     const color = isLongTile ? GAME_CONFIG.colors.blue : GAME_CONFIG.colors.green;
 
     // Create an invisible interactive rectangle for the tile
-    const hitArea = this.add.rectangle(x, y + tileHeight/2, GAME_CONFIG.tileWidth - 10, tileHeight);
+    const hitArea = this.add.rectangle(x, y + tileHeight/2, GAME_CONFIG.tileWidth, tileHeight);
     hitArea.setInteractive();
     hitArea.setAlpha(0.01); // Almost invisible but still interactive
 
@@ -303,10 +303,10 @@ class GameScene extends Phaser.Scene {
     } else {
       tile.fillGradientStyle(GAME_CONFIG.colors.green, GAME_CONFIG.colors.green, 0x00cc66, 0x00cc66, 0.95);
     }
-    tile.fillRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth - 10, tileHeight);
+    tile.fillRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth, tileHeight);
     // Add subtle border
     tile.lineStyle(2, isLongTile ? 0x00ffff : 0x00ffaa, 0.5);
-    tile.strokeRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth - 10, tileHeight);
+    tile.strokeRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth, tileHeight);
 
     if (isLongTile) {
       const holdText = this.add.text(0, tileHeight/2, '⬆ HOLD ⬆', TEXT_STYLES.holdText);
@@ -612,13 +612,13 @@ class GameScene extends Phaser.Scene {
         tile.clear();
         // Base tile with gradient
         tile.fillGradientStyle(0x006699, 0x006699, 0x004466, 0x004466, 0.5);
-        tile.fillRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth - 10, tile.tileHeight);
+        tile.fillRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth, tile.tileHeight);
         // Progress fill with glow
         tile.fillGradientStyle(0x00ffff, 0x00ffff, 0x00ccff, 0x00ccff, 1);
-        tile.fillRect(-GAME_CONFIG.tileWidth/2, tile.tileHeight - progressHeight, GAME_CONFIG.tileWidth - 10, progressHeight);
+        tile.fillRect(-GAME_CONFIG.tileWidth/2, tile.tileHeight - progressHeight, GAME_CONFIG.tileWidth, progressHeight);
         // Glowing border
         tile.lineStyle(2, 0x00ffff, 0.8);
-        tile.strokeRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth - 10, tile.tileHeight);
+        tile.strokeRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth, tile.tileHeight);
       }
 
       if (tile.y > GAME_CONFIG.height) {

@@ -112,7 +112,7 @@ class GameOverScene extends Phaser.Scene {
 
     // Menu button with gradient
     const menuBg = this.add.graphics();
-    const menuWidth = 220;
+    const menuWidth = 280;  // Same width as RETRY button
     const menuHeight = 80;
     const menuX = width / 2 - menuWidth / 2;
     const menuY = height * 0.8 - menuHeight / 2;

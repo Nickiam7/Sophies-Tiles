@@ -431,7 +431,8 @@ class GameScene extends Phaser.Scene {
     if (tile.isHit) return;
 
     tile.isHit = true;
-    this.score += 10 * Math.max(1, Math.floor(this.combo / 5));
+    const points = 10 * Math.max(1, Math.floor(this.combo / 5));
+    this.score += points;
     this.combo++;
 
     // Check for streak milestones (every 10)
@@ -439,26 +440,124 @@ class GameScene extends Phaser.Scene {
       this.celebrateStreakMilestone(this.combo);
     }
 
-    // Create glowing hit effect
-    const hitEffect = this.add.graphics();
-    hitEffect.fillStyle(tile.isLongTile ? 0x00ccff : 0x00ff88, 0.8);
-    hitEffect.fillCircle(tile.x, tile.y + tile.tileHeight/2, 35);
-    hitEffect.fillStyle(0xffffff, 0.5);
-    hitEffect.fillCircle(tile.x, tile.y + tile.tileHeight/2, 20);
+    // Create modern hit effects
+    this.createModernHitEffect(tile, points);
 
-    this.tweens.add({
-      targets: hitEffect,
-      alpha: 0,
-      scale: 2,
-      duration: 300,
-      onComplete: () => hitEffect.destroy()
-    });
-
-    tile.destroy();
-    if (tile.holdText) tile.holdText.destroy();
-    if (tile.hitArea) tile.hitArea.destroy();
+    // Animate tile destruction
+    this.animateTileDestruction(tile);
 
     this.updateUI();
+  }
+
+  createModernHitEffect(tile, points) {
+    const x = tile.x;
+    const y = tile.y + tile.tileHeight/2;
+    const isLongTile = tile.isLongTile;
+    
+    // 1. Score popup animation
+    const scoreText = this.add.text(x, y, `+${points}`, {
+      fontFamily: 'Poppins',
+      fontSize: '32px',
+      fontStyle: '700',
+      fill: isLongTile ? '#00ccff' : '#00ff88',
+      stroke: '#151937',
+      strokeThickness: 3
+    });
+    scoreText.setOrigin(0.5);
+    scoreText.setDepth(500);
+    
+    this.tweens.add({
+      targets: scoreText,
+      y: y - 80,
+      alpha: { from: 1, to: 0 },
+      scale: { from: 0.5, to: 1.2 },
+      duration: 800,
+      ease: 'Power2',
+      onComplete: () => scoreText.destroy()
+    });
+    
+    // 2. Ring pulse effect
+    const ring = this.add.graphics();
+    ring.lineStyle(3, isLongTile ? 0x00ccff : 0x00ff88, 1);
+    ring.strokeRect(x - GAME_CONFIG.tileWidth/2, y - tile.tileHeight/2, GAME_CONFIG.tileWidth, tile.tileHeight);
+    ring.setDepth(400);
+    
+    this.tweens.add({
+      targets: ring,
+      scaleX: 1.2,
+      scaleY: 1.3,
+      alpha: 0,
+      duration: 400,
+      ease: 'Power2',
+      onComplete: () => ring.destroy()
+    });
+    
+    // 3. Particle burst
+    for (let i = 0; i < 8; i++) {
+      const particle = this.add.graphics();
+      const color = isLongTile ? 
+        (i % 2 ? 0x00ccff : 0x00ffff) : 
+        (i % 2 ? 0x00ff88 : 0x00ffaa);
+      
+      particle.fillStyle(color, 1);
+      particle.fillRect(-3, -3, 6, 6);
+      particle.x = x;
+      particle.y = y;
+      particle.setDepth(450);
+      
+      const angle = (i / 8) * Math.PI * 2;
+      const distance = Phaser.Math.Between(50, 100);
+      
+      this.tweens.add({
+        targets: particle,
+        x: x + Math.cos(angle) * distance,
+        y: y + Math.sin(angle) * distance,
+        alpha: 0,
+        scale: { from: 1, to: 0 },
+        duration: 600,
+        ease: 'Power2',
+        onComplete: () => particle.destroy()
+      });
+    }
+    
+    // 4. Flash effect
+    const flash = this.add.graphics();
+    flash.fillStyle(0xffffff, 0.3);
+    flash.fillRect(x - GAME_CONFIG.tileWidth/2, y - tile.tileHeight/2, GAME_CONFIG.tileWidth, tile.tileHeight);
+    flash.setDepth(350);
+    
+    this.tweens.add({
+      targets: flash,
+      alpha: 0,
+      duration: 200,
+      onComplete: () => flash.destroy()
+    });
+  }
+
+  animateTileDestruction(tile) {
+    // Fade and scale down tile
+    this.tweens.add({
+      targets: tile,
+      alpha: 0,
+      scaleY: 0,
+      duration: 200,
+      ease: 'Power2',
+      onComplete: () => {
+        tile.destroy();
+        if (tile.holdText) tile.holdText.destroy();
+        if (tile.hitArea) tile.hitArea.destroy();
+      }
+    });
+    
+    // Also fade the hold text if it exists
+    if (tile.holdText) {
+      this.tweens.add({
+        targets: tile.holdText,
+        alpha: 0,
+        scale: 0.8,
+        duration: 200
+      });
+    }
   }
 
   celebrateStreakMilestone(streak) {

@@ -1129,21 +1129,27 @@ class GameScene extends Phaser.Scene {
   }
 
   missTile(tile) {
-    this.combo = 0;
-    this.lives--;
+    // Lucky tiles don't take away lives when missed
+    if (!tile.isLuckyTile) {
+      this.combo = 0;
+      this.lives--;
 
-    this.cameras.main.shake(200, 0.01);
+      this.cameras.main.shake(200, 0.01);
 
-    const missEffect = this.add.graphics();
-    missEffect.fillGradientStyle(GAME_CONFIG.colors.miss, GAME_CONFIG.colors.miss, 0xff0033, 0xff0033, 0.4);
-    missEffect.fillRect(0, GAME_CONFIG.hudHeight, GAME_CONFIG.width, GAME_CONFIG.gameplayHeight);
+      const missEffect = this.add.graphics();
+      missEffect.fillGradientStyle(GAME_CONFIG.colors.miss, GAME_CONFIG.colors.miss, 0xff0033, 0xff0033, 0.4);
+      missEffect.fillRect(0, GAME_CONFIG.hudHeight, GAME_CONFIG.width, GAME_CONFIG.gameplayHeight);
 
-    this.tweens.add({
-      targets: missEffect,
-      alpha: 0,
-      duration: 300,
-      onComplete: () => missEffect.destroy()
-    });
+      this.tweens.add({
+        targets: missEffect,
+        alpha: 0,
+        duration: 300,
+        onComplete: () => missEffect.destroy()
+      });
+    } else {
+      // For lucky tiles, just reset combo without penalty
+      this.combo = 0;
+    }
 
     tile.destroy();
     if (tile.holdText) tile.holdText.destroy();

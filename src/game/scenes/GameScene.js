@@ -89,6 +89,7 @@ class GameScene extends Phaser.Scene {
     this.gameSpeed = this.baseSpeed;
     this.levelStartTime = null;
     this.isTransitioningLevel = false;
+    this.lastLuckyTileTime = 0;  // Reset lucky tile cooldown
     
     this.createHUD();
     this.setupLanes();
@@ -280,11 +281,18 @@ class GameScene extends Phaser.Scene {
     const lane = Phaser.Math.Between(0, GAME_CONFIG.lanes - 1);
     const randomValue = Math.random();
     
-    // 20% chance for lucky tile, 20% for long tile, 60% for normal
+    // 5% chance for lucky tile (with cooldown), 20% for long tile, 75% for normal
     let tileType = 'normal';
-    if (randomValue < 0.2) {
+    
+    // Check if enough time has passed since last lucky tile (5 second cooldown)
+    const currentTime = this.time.now;
+    const timeSinceLastLucky = this.lastLuckyTileTime ? (currentTime - this.lastLuckyTileTime) : Infinity;
+    const canSpawnLucky = timeSinceLastLucky > 5000;
+    
+    if (randomValue < 0.05 && canSpawnLucky) {
       tileType = 'lucky';
-    } else if (randomValue < 0.4) {
+      this.lastLuckyTileTime = currentTime;
+    } else if (randomValue < 0.25) {  // 0.05 + 0.20 = 0.25
       tileType = 'long';
     }
     
@@ -626,8 +634,6 @@ class GameScene extends Phaser.Scene {
   }
 
   animateTileDestruction(tile) {
-    console.log('Animating tile destruction for:', tile.isLuckyTile ? 'Lucky' : (tile.isLongTile ? 'Long' : 'Normal'), 'tile');
-    
     // Fade and scale down tile
     this.tweens.add({
       targets: tile,
@@ -636,7 +642,6 @@ class GameScene extends Phaser.Scene {
       duration: 200,
       ease: 'Power2',
       onComplete: () => {
-        console.log('Destroying tile and associated objects');
         tile.destroy();
         if (tile.holdText) tile.holdText.destroy();
         if (tile.sparkleText) tile.sparkleText.destroy();
@@ -668,12 +673,10 @@ class GameScene extends Phaser.Scene {
   hitLuckyTile(tile) {
     if (tile.isHit) return;
     
-    console.log('Lucky tile hit! Starting processing...');
     tile.isHit = true;
     
     // Random outcome: 40% big points, 30% lose life, 30% gain life
     const randomOutcome = Math.random();
-    console.log('Random outcome:', randomOutcome);
     
     let resultMessage = '';
     let resultColor = '#ffffff';
@@ -685,21 +688,18 @@ class GameScene extends Phaser.Scene {
       this.score += resultValue;
       resultMessage = `+${resultValue} POINTS!`;
       resultColor = '#ffd700';
-      console.log('Points reward:', resultValue);
     } else if (randomOutcome < 0.7) {
       // Lose a life
       if (this.lives > 1) {
         this.lives--;
         resultMessage = '−1 LIFE!';
         resultColor = '#ff3366';
-        console.log('Lost a life, remaining:', this.lives);
       } else {
         // If only 1 life left, give points instead
         resultValue = 30;
         this.score += resultValue;
         resultMessage = `+${resultValue} POINTS!`;
         resultColor = '#ffd700';
-        console.log('Would lose life but only 1 left, giving points instead');
       }
     } else {
       // Gain a life!
@@ -707,18 +707,14 @@ class GameScene extends Phaser.Scene {
         this.lives++;
         resultMessage = '+1 LIFE!';
         resultColor = '#00ff88';
-        console.log('Gained a life, total:', this.lives);
       } else {
         // Max lives, give points instead
         resultValue = 100;
         this.score += resultValue;
         resultMessage = `+${resultValue} POINTS!`;
         resultColor = '#ffd700';
-        console.log('Max lives reached, giving points instead');
       }
     }
-    
-    console.log('Result message:', resultMessage, 'Color:', resultColor);
     
     // Display result message higher on screen
     this.displayLuckyResult(tile.x, tile.y - 100, resultMessage, resultColor);
@@ -971,10 +967,7 @@ class GameScene extends Phaser.Scene {
     }
 
     this.tiles = this.tiles.filter(tile => {
-      if (tile.isHit) {
-        console.log('Filtering out hit tile:', tile.isLuckyTile ? 'Lucky' : (tile.isLongTile ? 'Long' : 'Normal'));
-        return false;
-      }
+      if (tile.isHit) return false;
 
       tile.y += this.gameSpeed * this.game.loop.delta / 1000;
 

@@ -22,31 +22,34 @@ class GameScene extends Phaser.Scene {
     this.holdingTiles = new Map();
     
     // Level system - ensure everything is reset
+    this.currentLevel = 1; // Always start at level 1
     this.maxLevel = 5;
     this.levelDuration = 20000; // 20 seconds per level
     this.levelStartTime = null; // Set to null, will be initialized in create()
     this.levelProgress = 0;
     this.isTransitioningLevel = false;
-    this.baseSpeed = GAME_CONFIG.tileSpeed;
     this.speedMultiplier = 1.25; // 25% speed increase per level
     this.lastLuckyTileTime = 0; // Track when last lucky tile was spawned
     
-    // Set starting level and speed based on difficulty
+    // Set base speed based on difficulty (this affects ALL levels)
     switch(this.difficulty) {
       case 'hard':
-        this.currentLevel = 5;
-        this.gameSpeed = this.baseSpeed * Math.pow(this.speedMultiplier, 4); // Level 5 speed
+        // Start with level 5 speed as base, will get even faster with each level
+        this.baseSpeed = GAME_CONFIG.tileSpeed * Math.pow(this.speedMultiplier, 4);
         break;
       case 'medium':
-        this.currentLevel = 3;
-        this.gameSpeed = this.baseSpeed * Math.pow(this.speedMultiplier, 2); // Level 3 speed
+        // Start with level 3 speed as base
+        this.baseSpeed = GAME_CONFIG.tileSpeed * Math.pow(this.speedMultiplier, 2);
         break;
       case 'easy':
       default:
-        this.currentLevel = 1;
-        this.gameSpeed = this.baseSpeed; // Level 1 speed
+        // Normal base speed
+        this.baseSpeed = GAME_CONFIG.tileSpeed;
         break;
     }
+    
+    // Set initial game speed (will increase with each level)
+    this.gameSpeed = this.baseSpeed;
   }
   
   cleanupUI() {

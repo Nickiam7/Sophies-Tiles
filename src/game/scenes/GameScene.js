@@ -28,6 +28,7 @@ class GameScene extends Phaser.Scene {
     this.isTransitioningLevel = false;
     this.baseSpeed = GAME_CONFIG.tileSpeed;
     this.speedMultiplier = 1.25; // 25% speed increase per level
+    this.lastLuckyTileTime = 0; // Track when last lucky tile was spawned
   }
   
   cleanupUI() {
@@ -277,13 +278,24 @@ class GameScene extends Phaser.Scene {
     if (this.isGameOver || this.isTransitioningLevel) return;
 
     const lane = Phaser.Math.Between(0, GAME_CONFIG.lanes - 1);
-    const isLongTile = Math.random() < 0.2;
-    const tile = this.createTile(lane, isLongTile);
-
+    const randomValue = Math.random();
+    
+    // 20% chance for lucky tile, 20% for long tile, 60% for normal
+    let tileType = 'normal';
+    if (randomValue < 0.2) {
+      tileType = 'lucky';
+    } else if (randomValue < 0.4) {
+      tileType = 'long';
+    }
+    
+    const tile = this.createTile(lane, tileType);
     this.tiles.push(tile);
   }
 
-  createTile(lane, isLongTile = false) {
+  createTile(lane, tileType = 'normal') {
+    const isLongTile = tileType === 'long';
+    const isLuckyTile = tileType === 'lucky';
+    
     const laneWidth = GAME_CONFIG.width / GAME_CONFIG.lanes;
     const x = lane * laneWidth + laneWidth / 2;
     const y = GAME_CONFIG.hudHeight - GAME_CONFIG.tileHeight;  // Start tiles just above HUD
@@ -297,16 +309,42 @@ class GameScene extends Phaser.Scene {
     hitArea.setAlpha(0.01); // Almost invisible but still interactive
 
     const tile = this.add.graphics();
-    // Add gradient effect to tiles
-    if (isLongTile) {
+    // Add gradient effect to tiles based on type
+    if (isLuckyTile) {
+      // Golden gradient for lucky tiles
+      tile.fillGradientStyle(GAME_CONFIG.colors.lucky, GAME_CONFIG.colors.luckyGlow, GAME_CONFIG.colors.lucky, GAME_CONFIG.colors.luckyGlow, 0.95);
+      tile.fillRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth, tileHeight);
+      
+      // Pulsing glow border
+      tile.lineStyle(4, GAME_CONFIG.colors.luckyGlow, 1);
+      tile.strokeRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth, tileHeight);
+      
+      // Inner glow
+      tile.lineStyle(2, 0xffffff, 0.5);
+      tile.strokeRect(-GAME_CONFIG.tileWidth/2 + 4, 4, GAME_CONFIG.tileWidth - 8, tileHeight - 8);
+      
+      // Add sparkle text  
+      const sparkleText = this.add.text(0, tileHeight/2, '⭐ LUCKY ⭐', {
+        fontFamily: 'Poppins',
+        fontSize: '18px',
+        fontStyle: '700',
+        fill: '#ffffff',
+        stroke: '#ff6600',
+        strokeThickness: 2
+      });
+      sparkleText.setOrigin(0.5);
+      tile.sparkleText = sparkleText;
+    } else if (isLongTile) {
       tile.fillGradientStyle(GAME_CONFIG.colors.blue, GAME_CONFIG.colors.blue, 0x0099cc, 0x0099cc, 0.95);
+      tile.fillRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth, tileHeight);
+      tile.lineStyle(2, 0x00ffff, 0.5);
+      tile.strokeRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth, tileHeight);
     } else {
       tile.fillGradientStyle(GAME_CONFIG.colors.green, GAME_CONFIG.colors.green, 0x00cc66, 0x00cc66, 0.95);
+      tile.fillRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth, tileHeight);
+      tile.lineStyle(2, 0x00ffaa, 0.5);
+      tile.strokeRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth, tileHeight);
     }
-    tile.fillRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth, tileHeight);
-    // Add subtle border
-    tile.lineStyle(2, isLongTile ? 0x00ffff : 0x00ffaa, 0.5);
-    tile.strokeRect(-GAME_CONFIG.tileWidth/2, 0, GAME_CONFIG.tileWidth, tileHeight);
 
     if (isLongTile) {
       const holdText = this.add.text(0, tileHeight/2, '⬆ HOLD ⬆', TEXT_STYLES.holdText);
@@ -318,16 +356,20 @@ class GameScene extends Phaser.Scene {
     tile.y = y;
     tile.lane = lane;
     tile.isLongTile = isLongTile;
+    tile.isLuckyTile = isLuckyTile;
     tile.tileHeight = tileHeight;
     tile.isHit = false;
     tile.holdProgress = 0;
     tile.hitArea = hitArea;
     tile.isHolding = false;
+    tile.pulseTime = 0;  // For animating lucky tiles
 
     // Add event listeners to the hit area
     hitArea.on('pointerdown', () => {
       if (!tile.isHit) {
-        if (tile.isLongTile) {
+        if (tile.isLuckyTile) {
+          this.hitLuckyTile(tile);
+        } else if (tile.isLongTile) {
           this.holdingTiles.set(lane, tile);
           tile.isHolding = true;
         } else {
@@ -584,6 +626,8 @@ class GameScene extends Phaser.Scene {
   }
 
   animateTileDestruction(tile) {
+    console.log('Animating tile destruction for:', tile.isLuckyTile ? 'Lucky' : (tile.isLongTile ? 'Long' : 'Normal'), 'tile');
+    
     // Fade and scale down tile
     this.tweens.add({
       targets: tile,
@@ -592,8 +636,10 @@ class GameScene extends Phaser.Scene {
       duration: 200,
       ease: 'Power2',
       onComplete: () => {
+        console.log('Destroying tile and associated objects');
         tile.destroy();
         if (tile.holdText) tile.holdText.destroy();
+        if (tile.sparkleText) tile.sparkleText.destroy();
         if (tile.hitArea) tile.hitArea.destroy();
       }
     });
@@ -605,6 +651,193 @@ class GameScene extends Phaser.Scene {
         alpha: 0,
         scale: 0.8,
         duration: 200
+      });
+    }
+    
+    // Also fade the sparkle text for lucky tiles
+    if (tile.sparkleText) {
+      this.tweens.add({
+        targets: tile.sparkleText,
+        alpha: 0,
+        scale: 0.5,
+        duration: 200
+      });
+    }
+  }
+
+  hitLuckyTile(tile) {
+    if (tile.isHit) return;
+    
+    console.log('Lucky tile hit! Starting processing...');
+    tile.isHit = true;
+    
+    // Random outcome: 40% big points, 30% lose life, 30% gain life
+    const randomOutcome = Math.random();
+    console.log('Random outcome:', randomOutcome);
+    
+    let resultMessage = '';
+    let resultColor = '#ffffff';
+    let resultValue = 0;
+    
+    if (randomOutcome < 0.4) {
+      // Big points bonus!
+      resultValue = Phaser.Math.Between(50, 150);
+      this.score += resultValue;
+      resultMessage = `+${resultValue} POINTS!`;
+      resultColor = '#ffd700';
+      console.log('Points reward:', resultValue);
+    } else if (randomOutcome < 0.7) {
+      // Lose a life
+      if (this.lives > 1) {
+        this.lives--;
+        resultMessage = '−1 LIFE!';
+        resultColor = '#ff3366';
+        console.log('Lost a life, remaining:', this.lives);
+      } else {
+        // If only 1 life left, give points instead
+        resultValue = 30;
+        this.score += resultValue;
+        resultMessage = `+${resultValue} POINTS!`;
+        resultColor = '#ffd700';
+        console.log('Would lose life but only 1 left, giving points instead');
+      }
+    } else {
+      // Gain a life!
+      if (this.lives < 5) {
+        this.lives++;
+        resultMessage = '+1 LIFE!';
+        resultColor = '#00ff88';
+        console.log('Gained a life, total:', this.lives);
+      } else {
+        // Max lives, give points instead
+        resultValue = 100;
+        this.score += resultValue;
+        resultMessage = `+${resultValue} POINTS!`;
+        resultColor = '#ffd700';
+        console.log('Max lives reached, giving points instead');
+      }
+    }
+    
+    console.log('Result message:', resultMessage, 'Color:', resultColor);
+    
+    // Display result message higher on screen
+    this.displayLuckyResult(tile.x, tile.y - 100, resultMessage, resultColor);
+    
+    // Create special effect for lucky tile hit
+    this.createLuckyHitEffect(tile);
+    
+    // Animate tile destruction
+    this.animateTileDestruction(tile);
+    
+    // Check if lost all lives
+    if (this.lives <= 0) {
+      this.gameOver();
+    } else {
+      this.updateUI();
+    }
+  }
+  
+  displayLuckyResult(x, y, message, color) {
+    const { width, height } = this.cameras.main;
+    
+    // Position higher on screen (around 1/3 from top)
+    const displayY = Math.min(y, height * 0.3);
+    
+    // Create the result text with dramatic styling
+    const resultText = this.add.text(x, displayY, message, {
+      fontFamily: 'Poppins',
+      fontSize: '56px',
+      fontStyle: '900',
+      fill: color,
+      stroke: '#151937',
+      strokeThickness: 6
+    });
+    resultText.setOrigin(0.5);
+    resultText.setDepth(1100);
+    resultText.setShadow(0, 5, '#000000', 20, true, true);
+    
+    // Add secondary glow effect
+    const glowText = this.add.text(x, displayY, message, {
+      fontFamily: 'Poppins',
+      fontSize: '56px',
+      fontStyle: '900',
+      fill: color,
+      alpha: 0.5
+    });
+    glowText.setOrigin(0.5);
+    glowText.setDepth(1099);
+    glowText.setScale(1.1);
+    
+    // Animate the result
+    this.tweens.add({
+      targets: [resultText, glowText],
+      scale: { from: 0, to: 1.2 },
+      duration: 300,
+      ease: 'Back.easeOut',
+      onComplete: () => {
+        this.tweens.add({
+          targets: [resultText, glowText],
+          y: displayY - 60,
+          alpha: 0,
+          duration: 1200,
+          delay: 500,
+          ease: 'Power2',
+          onComplete: () => {
+            resultText.destroy();
+            glowText.destroy();
+          }
+        });
+      }
+    });
+    
+    // Screen flash effect based on result
+    const flashColor = color === '#ff3366' ? 0xff0000 : (color === '#00ccff' ? 0x00ccff : 0xffd700);
+    const flash = this.add.rectangle(width / 2, height / 2, width, height, flashColor);
+    flash.setAlpha(0.3);
+    flash.setDepth(998);
+    
+    this.tweens.add({
+      targets: flash,
+      alpha: 0,
+      duration: 300,
+      onComplete: () => flash.destroy()
+    });
+  }
+  
+  createLuckyHitEffect(tile) {
+    const x = tile.x;
+    const y = tile.y + tile.tileHeight/2;
+    
+    // Golden starburst effect
+    for (let i = 0; i < 16; i++) {
+      const star = this.add.graphics();
+      star.fillStyle(i % 2 ? GAME_CONFIG.colors.lucky : GAME_CONFIG.colors.luckyGlow, 1);
+      
+      // Draw diamond shape instead of star
+      star.beginPath();
+      star.moveTo(0, -8);
+      star.lineTo(5, 0);
+      star.lineTo(0, 8);
+      star.lineTo(-5, 0);
+      star.closePath();
+      star.fill();
+      star.x = x;
+      star.y = y;
+      star.setDepth(500);
+      
+      const angle = (i / 16) * Math.PI * 2;
+      const distance = Phaser.Math.Between(100, 200);
+      
+      this.tweens.add({
+        targets: star,
+        x: x + Math.cos(angle) * distance,
+        y: y + Math.sin(angle) * distance,
+        alpha: 0,
+        scale: { from: 1, to: 0 },
+        rotation: Math.PI * 2,
+        duration: 800,
+        ease: 'Power2',
+        onComplete: () => star.destroy()
       });
     }
   }
@@ -738,7 +971,10 @@ class GameScene extends Phaser.Scene {
     }
 
     this.tiles = this.tiles.filter(tile => {
-      if (tile.isHit) return false;
+      if (tile.isHit) {
+        console.log('Filtering out hit tile:', tile.isLuckyTile ? 'Lucky' : (tile.isLongTile ? 'Long' : 'Normal'));
+        return false;
+      }
 
       tile.y += this.gameSpeed * this.game.loop.delta / 1000;
 
@@ -750,6 +986,17 @@ class GameScene extends Phaser.Scene {
       if (tile.holdText) {
         tile.holdText.x = tile.x;
         tile.holdText.y = tile.y + tile.tileHeight/2;
+      }
+      
+      // Update sparkle text position and animation for lucky tiles
+      if (tile.sparkleText && !tile.isHit) {
+        tile.sparkleText.x = tile.x;
+        tile.sparkleText.y = tile.y + tile.tileHeight/2;
+        
+        // Animate pulsing
+        tile.pulseTime += this.game.loop.delta / 1000;
+        const pulseScale = 1 + Math.sin(tile.pulseTime * 5) * 0.1;
+        tile.sparkleText.setScale(pulseScale);
       }
 
       // Handle hold progress for tiles being held (either directly or through lane system)
@@ -787,6 +1034,7 @@ class GameScene extends Phaser.Scene {
     this.tiles.forEach(tile => {
       if (tile.hitArea) tile.hitArea.destroy();
       if (tile.holdText) tile.holdText.destroy();
+      if (tile.sparkleText) tile.sparkleText.destroy();
       tile.destroy();
     });
     this.tiles = [];
@@ -886,6 +1134,7 @@ class GameScene extends Phaser.Scene {
 
     tile.destroy();
     if (tile.holdText) tile.holdText.destroy();
+    if (tile.sparkleText) tile.sparkleText.destroy();
     if (tile.hitArea) tile.hitArea.destroy();
 
     this.updateUI();
@@ -909,6 +1158,7 @@ class GameScene extends Phaser.Scene {
     this.tiles.forEach(tile => {
       if (tile.hitArea) tile.hitArea.destroy();
       if (tile.holdText) tile.holdText.destroy();
+      if (tile.sparkleText) tile.sparkleText.destroy();
       tile.destroy();
     });
     this.tiles = [];
@@ -984,6 +1234,7 @@ class GameScene extends Phaser.Scene {
     this.tiles.forEach(tile => {
       if (tile.hitArea) tile.hitArea.destroy();
       if (tile.holdText) tile.holdText.destroy();
+      if (tile.sparkleText) tile.sparkleText.destroy();
       tile.destroy();
     });
 

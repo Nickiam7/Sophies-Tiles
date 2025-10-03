@@ -20,6 +20,8 @@ export const GAME_CONFIG = {
   colors: {
     green: 0x00ff88,
     blue: 0x00ccff,
+    lucky: 0xffd700,  // Golden color for lucky tiles
+    luckyGlow: 0xffaa00,  // Orange glow for lucky tiles
     background: 0x0a0e27,
     hudBackground: 0x151937,
     miss: 0xff3366,

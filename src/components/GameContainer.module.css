@@ -2,16 +2,30 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
+  width: 100vw;
+  height: 100vh;
   background: linear-gradient(135deg, #0a0e27 0%, #151937 50%, #2e1a47 100%);
-  padding: 20px;
+  padding: 0;
+  margin: 0;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .gameContainer {
-  border-radius: 12px;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  max-width: 100%;
-  max-height: 100vh;
+  position: relative;
+}
+
+.gameContainer canvas {
+  margin: 0 !important;
+  padding: 0 !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
 }

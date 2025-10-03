@@ -1,18 +1,21 @@
 import Phaser from 'phaser';
 
+// Dynamically calculate dimensions based on window size
+const aspectRatio = window.innerHeight / window.innerWidth;
+const isPortrait = aspectRatio > 1;
+const baseWidth = isPortrait ? Math.min(768, window.innerWidth) : Math.min(1024, window.innerWidth);
+const baseHeight = isPortrait ? Math.min(1024, window.innerHeight) : Math.min(768, window.innerHeight);
+
 export const GAME_CONFIG = {
-  // Base dimensions for iPad Pro (3:4 aspect ratio)
-  baseWidth: 1024,
-  baseHeight: 1366,
-  // Actual canvas dimensions will be scaled
-  width: 768,  // Default width for tablets
-  height: 1024,  // Default height for tablets
-  hudHeight: 120,  // Larger HUD for tablet
-  gameplayHeight: 904,  // Remaining space for gameplay
+  // Dynamic dimensions based on viewport
+  width: baseWidth,
+  height: baseHeight,
+  hudHeight: Math.floor(baseHeight * 0.12),  // 12% of height for HUD
+  gameplayHeight: Math.floor(baseHeight * 0.88),  // 88% for gameplay
   lanes: 4,
-  tileWidth: 192,  // 768 / 4 lanes
-  tileHeight: 120,  // Larger for better touch targets
-  tileSpeed: 300,  // Adjusted for larger screen
+  tileWidth: baseWidth / 4,
+  tileHeight: Math.floor(baseHeight * 0.1),  // 10% of height per tile
+  tileSpeed: Math.floor(baseHeight * 0.3),  // Speed relative to screen
   spawnInterval: 1000,
   colors: {
     green: 0x00ff88,
@@ -34,16 +37,18 @@ export const phaserConfig = {
   height: GAME_CONFIG.height,
   scale: {
     mode: Phaser.Scale.FIT,
-    autoCenter: Phaser.Scale.CENTER_BOTH,
+    autoCenter: Phaser.Scale.NONE,  // Changed to NONE to prevent margin-left
     width: GAME_CONFIG.width,
     height: GAME_CONFIG.height,
+    parent: 'phaser-container',
+    expandParent: false,
     min: {
-      width: 400,
-      height: 600
+      width: 320,
+      height: 480
     },
     max: {
-      width: 1024,
-      height: 1366
+      width: 2048,
+      height: 2732
     }
   },
   physics: {

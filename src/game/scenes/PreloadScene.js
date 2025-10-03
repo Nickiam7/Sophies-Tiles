@@ -15,13 +15,7 @@ class PreloadScene extends Phaser.Scene {
     const width = this.cameras.main.width
     const height = this.cameras.main.height
 
-    const border = this.add.graphics()
-    border.lineStyle(3, 0x00ccff, 0.3)
-    border.strokeRect(10, 10, width - 20, height - 20)
-
-    const innerGlow = this.add.graphics()
-    innerGlow.lineStyle(2, 0x9b59ff, 0.2)
-    innerGlow.strokeRect(15, 15, width - 30, height - 30)
+    // Removed borders to maximize screen usage
 
     const loadingText = this.add.text(width / 2, height / 2 - 50, 'Loading Sophie\'s Tiles...', {
       fontFamily: 'Poppins',

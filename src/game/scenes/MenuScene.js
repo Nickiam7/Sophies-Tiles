@@ -11,16 +11,6 @@ class MenuScene extends Phaser.Scene {
     
     // Fade in effect
     this.cameras.main.fadeIn(300, 0, 0, 0)
-    
-    // Add subtle border/glow around the entire scene
-    const border = this.add.graphics()
-    border.lineStyle(3, 0x00ccff, 0.3)
-    border.strokeRect(10, 10, width - 20, height - 20)
-    
-    // Add inner glow
-    const innerGlow = this.add.graphics()
-    innerGlow.lineStyle(2, 0x9b59ff, 0.2)
-    innerGlow.strokeRect(15, 15, width - 30, height - 30)
 
     const title = this.add.text(width / 2, height / 3, "Sophie's Tiles", TEXT_STYLES.title)
     title.setOrigin(0.5)

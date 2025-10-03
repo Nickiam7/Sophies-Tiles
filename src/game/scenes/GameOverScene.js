@@ -8,6 +8,7 @@ class GameOverScene extends Phaser.Scene {
 
   init(data) {
     this.finalScore = data.score || 0;
+    this.difficulty = data.difficulty || 'easy';
     
     // Completely stop the GameScene to ensure clean restart
     if (this.scene.get('GameScene')) {
@@ -90,13 +91,8 @@ class GameOverScene extends Phaser.Scene {
           // Fade out before scene transition
           this.cameras.main.fadeOut(300, 0, 0, 0);
           this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
-            // Get the game scene and restart it completely
-            const gameScene = this.scene.get('GameScene');
-            if (gameScene && gameScene.scene) {
-              gameScene.scene.restart();
-            } else {
-              this.scene.start('GameScene');
-            }
+            // Restart game with same difficulty
+            this.scene.start('GameScene', { difficulty: this.difficulty });
             this.scene.stop('GameOverScene');
           });
         }

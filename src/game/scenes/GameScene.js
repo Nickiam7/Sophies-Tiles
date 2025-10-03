@@ -7,7 +7,10 @@ class GameScene extends Phaser.Scene {
     super({ key: 'GameScene' });
   }
 
-  init() {
+  init(data) {
+    // Get difficulty from data (default to easy if not provided)
+    this.difficulty = data?.difficulty || 'easy';
+    
     // Reset all game state when scene starts/restarts
     this.score = 0;
     this.combo = 0;
@@ -15,12 +18,10 @@ class GameScene extends Phaser.Scene {
     this.tiles = [];
     this.tilePool = [];
     this.isGameOver = false;
-    this.gameSpeed = GAME_CONFIG.tileSpeed;
     this.spawnTimer = 0;
     this.holdingTiles = new Map();
     
     // Level system - ensure everything is reset
-    this.currentLevel = 1;
     this.maxLevel = 5;
     this.levelDuration = 20000; // 20 seconds per level
     this.levelStartTime = null; // Set to null, will be initialized in create()
@@ -29,6 +30,23 @@ class GameScene extends Phaser.Scene {
     this.baseSpeed = GAME_CONFIG.tileSpeed;
     this.speedMultiplier = 1.25; // 25% speed increase per level
     this.lastLuckyTileTime = 0; // Track when last lucky tile was spawned
+    
+    // Set starting level and speed based on difficulty
+    switch(this.difficulty) {
+      case 'hard':
+        this.currentLevel = 5;
+        this.gameSpeed = this.baseSpeed * Math.pow(this.speedMultiplier, 4); // Level 5 speed
+        break;
+      case 'medium':
+        this.currentLevel = 3;
+        this.gameSpeed = this.baseSpeed * Math.pow(this.speedMultiplier, 2); // Level 3 speed
+        break;
+      case 'easy':
+      default:
+        this.currentLevel = 1;
+        this.gameSpeed = this.baseSpeed; // Level 1 speed
+        break;
+    }
   }
   
   cleanupUI() {
@@ -83,13 +101,12 @@ class GameScene extends Phaser.Scene {
     // Clean up any existing UI elements first
     this.cleanupUI();
     
-    // Force reset ALL level values
+    // Reset progress but keep difficulty-based values
     this.levelProgress = 0;
-    this.currentLevel = 1;
-    this.gameSpeed = this.baseSpeed;
     this.levelStartTime = null;
     this.isTransitioningLevel = false;
     this.lastLuckyTileTime = 0;  // Reset lucky tile cooldown
+    // Note: currentLevel and gameSpeed are set based on difficulty in init()
     
     this.createHUD();
     this.setupLanes();
@@ -1190,7 +1207,7 @@ class GameScene extends Phaser.Scene {
     
     // Go to game over scene after celebration
     this.time.delayedCall(5000, () => {
-      this.scene.start('GameOverScene', { score: this.score, victory: true });
+      this.scene.start('GameOverScene', { score: this.score, victory: true, difficulty: this.difficulty });
     });
   }
 
@@ -1237,7 +1254,7 @@ class GameScene extends Phaser.Scene {
     // Clear any timers
     this.time.removeAllEvents();
 
-    this.scene.start('GameOverScene', { score: this.score });
+    this.scene.start('GameOverScene', { score: this.score, difficulty: this.difficulty });
   }
 }
 

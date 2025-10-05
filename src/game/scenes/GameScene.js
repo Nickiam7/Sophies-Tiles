@@ -21,6 +21,7 @@ class GameScene extends Phaser.Scene {
     
     // Reset all game state when scene starts/restarts
     this.score = this.codeEffects.startingPoints; // Use starting points from codes
+    this.lastScore = this.score; // Track for pulse animation
     this.combo = 0;
     this.lives = this.codeEffects.lives; // Use code-modified lives
     this.tiles = [];
@@ -28,6 +29,7 @@ class GameScene extends Phaser.Scene {
     this.isGameOver = false;
     this.spawnTimer = 0;
     this.holdingTiles = new Map();
+    this.scorePulseTween = null; // Track active pulse tween
     
     // Level system - ensure everything is reset
     this.currentLevel = 1; // Always start at level 1
@@ -1262,8 +1264,67 @@ class GameScene extends Phaser.Scene {
     return score.toString();
   }
   
+  pulseScore(pointsEarned = 0) {
+    // Create a quick pulse animation for score feedback
+    if (this.scorePulseTween) {
+      this.scorePulseTween.stop();
+    }
+    
+    // Reset scale first
+    this.scoreText.setScale(1);
+    
+    // Create pulse animation
+    this.scorePulseTween = this.tweens.add({
+      targets: this.scoreText,
+      scale: 1.15,
+      duration: 100,
+      yoyo: true,
+      ease: 'Power2',
+      onComplete: () => {
+        this.scoreText.setScale(1);
+        this.scorePulseTween = null;
+      }
+    });
+    
+    // Add temporary glow effect - color based on combo
+    const glowColor = this.combo > 10 ? '#ffd700' : '#00ff88';
+    this.scoreText.setShadow(0, 3, glowColor, 20, true, true);
+    
+    // Reset shadow after animation
+    this.time.delayedCall(200, () => {
+      this.scoreText.setShadow(0, 3, '#000000', 8, true, true);
+    });
+    
+    // Show mini point indicator if we have billion points active
+    // This helps show that points are being earned even if display doesn't change
+    if (this.codeEffects.startingPoints > 0 && pointsEarned > 0) {
+      const miniPoints = this.add.text(80, 85, `+${pointsEarned}`, {
+        fontFamily: 'Poppins',
+        fontSize: '16px',
+        fontStyle: '600',
+        fill: '#00ff88',
+        stroke: '#000000',
+        strokeThickness: 2
+      });
+      miniPoints.setOrigin(0.5, 0);
+      miniPoints.setDepth(102);
+      miniPoints.setAlpha(0.8);
+      
+      // Float up and fade out
+      this.tweens.add({
+        targets: miniPoints,
+        y: 75,
+        alpha: 0,
+        duration: 600,
+        ease: 'Power2',
+        onComplete: () => miniPoints.destroy()
+      });
+    }
+  }
+  
   updateUI() {
     const formattedScore = this.formatScore(this.score);
+    const previousText = this.scoreText.text;
     this.scoreText.setText(formattedScore);
     
     // Dynamic font sizing based on score display length
@@ -1277,6 +1338,14 @@ class GameScene extends Phaser.Scene {
     // Only update font size if it changed
     if (this.scoreText.style.fontSize !== fontSize) {
       this.scoreText.setFontSize(fontSize);
+    }
+    
+    // Pulse the score even if the displayed text hasn't changed
+    // This gives feedback that points were earned
+    if (this.lastScore !== this.score) {
+      const pointsEarned = this.score - this.lastScore;
+      this.pulseScore(pointsEarned);
+      this.lastScore = this.score;
     }
     
     this.comboText.setText(`Streak: ${this.combo}`);

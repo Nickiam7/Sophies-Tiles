@@ -1,10 +1,14 @@
 import Phaser from 'phaser'
 import { TEXT_STYLES } from '../styles'
+import { validateCode, getActiveEffects, activeCodes } from '../codes'
 
 class MenuScene extends Phaser.Scene {
   constructor() {
     super({ key: 'MenuScene' })
     this.selectedDifficulty = 'easy' // Default to easy
+    this.showCodeInput = false
+    this.codeInput = null
+    this.flashMessage = null
   }
 
   create() {
@@ -72,7 +76,12 @@ class MenuScene extends Phaser.Scene {
           // Fade out before scene transition
           this.cameras.main.fadeOut(300, 0, 0, 0)
           this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
-            this.scene.start('GameScene', { difficulty: this.selectedDifficulty })
+            // Pass active code effects to GameScene
+            const effects = getActiveEffects()
+            this.scene.start('GameScene', { 
+              difficulty: this.selectedDifficulty,
+              ...effects
+            })
           })
         }
       })
@@ -92,12 +101,23 @@ class MenuScene extends Phaser.Scene {
 
     // Create difficulty buttons
     this.createDifficultyButtons(width, height)
+    
+    // Add Enter Code button
+    this.createEnterCodeButton(width, height)
+    
+    // Create code input modal (hidden initially)
+    this.createCodeModal(width, height)
 
-    const instructions = this.add.text(width / 2, height * 0.82,
+    const instructions = this.add.text(width / 2, height * 0.87,
       'Tap tiles before they reach the bottom!\nHold blue tiles for the duration!', 
       TEXT_STYLES.instruction)
     instructions.setOrigin(0.5)
     instructions.setShadow(0, 2, '#000000', 5, true, true)
+    
+    // Show active codes indicator if any
+    if (activeCodes.size > 0) {
+      this.showActiveCodesIndicator(width, height)
+    }
   }
 
   createDifficultyButtons(width, height) {
@@ -228,6 +248,291 @@ class MenuScene extends Phaser.Scene {
       buttonBg.fillRect(x - buttonWidth/2, buttonY - buttonHeight/2, buttonWidth, buttonHeight)
       buttonBg.strokeRect(x - buttonWidth/2, buttonY - buttonHeight/2, buttonWidth, buttonHeight)
     })
+  }
+  
+  createEnterCodeButton(width, height) {
+    const codeButton = this.add.text(width / 2, height * 0.74, 'ENTER CODE', {
+      fontFamily: 'Poppins',
+      fontSize: '20px',
+      fontStyle: '600',
+      fill: '#9b59ff',
+      stroke: '#151937',
+      strokeThickness: 2
+    })
+    codeButton.setOrigin(0.5)
+    codeButton.setInteractive({ useHandCursor: true })
+    codeButton.setShadow(0, 2, '#000000', 5, true, true)
+    
+    // Underline effect
+    const underline = this.add.graphics()
+    underline.lineStyle(2, 0x9b59ff, 0.5)
+    underline.lineBetween(
+      width / 2 - codeButton.width / 2,
+      height * 0.74 + 15,
+      width / 2 + codeButton.width / 2,
+      height * 0.74 + 15
+    )
+    
+    codeButton.on('pointerover', () => {
+      codeButton.setFill('#b47fff')
+      underline.clear()
+      underline.lineStyle(2, 0xb47fff, 1)
+      underline.lineBetween(
+        width / 2 - codeButton.width / 2,
+        height * 0.74 + 15,
+        width / 2 + codeButton.width / 2,
+        height * 0.74 + 15
+      )
+    })
+    
+    codeButton.on('pointerout', () => {
+      codeButton.setFill('#9b59ff')
+      underline.clear()
+      underline.lineStyle(2, 0x9b59ff, 0.5)
+      underline.lineBetween(
+        width / 2 - codeButton.width / 2,
+        height * 0.74 + 15,
+        width / 2 + codeButton.width / 2,
+        height * 0.74 + 15
+      )
+    })
+    
+    codeButton.on('pointerdown', () => {
+      this.showCodeModal()
+    })
+  }
+  
+  createCodeModal(width, height) {
+    // Create modal background (hidden initially)
+    this.modalBg = this.add.graphics()
+    this.modalBg.fillStyle(0x000000, 0.8)
+    this.modalBg.fillRect(0, 0, width, height)
+    this.modalBg.setInteractive()
+    this.modalBg.setDepth(1000)
+    this.modalBg.setVisible(false)
+    
+    // Modal container
+    this.modalContainer = this.add.container(width / 2, height / 2)
+    this.modalContainer.setDepth(1001)
+    this.modalContainer.setVisible(false)
+    
+    // Modal background box
+    const modalBox = this.add.graphics()
+    modalBox.fillGradientStyle(0x151937, 0x151937, 0x0a0e27, 0x0a0e27, 1)
+    modalBox.fillRoundedRect(-200, -100, 400, 200, 20)
+    modalBox.lineStyle(3, 0x9b59ff, 0.5)
+    modalBox.strokeRoundedRect(-200, -100, 400, 200, 20)
+    this.modalContainer.add(modalBox)
+    
+    // Title
+    const modalTitle = this.add.text(0, -60, 'ENTER SECRET CODE', {
+      fontFamily: 'Poppins',
+      fontSize: '28px',
+      fontStyle: '700',
+      fill: '#ffffff'
+    })
+    modalTitle.setOrigin(0.5)
+    this.modalContainer.add(modalTitle)
+    
+    // Create HTML input field (styled to match game)
+    this.createCodeInputField()
+    
+    // Submit button
+    const submitBg = this.add.graphics()
+    submitBg.fillGradientStyle(0x00ff88, 0x00ff88, 0x00cc66, 0x00cc66, 1)
+    submitBg.fillRoundedRect(-60, 20, 120, 40, 10)
+    this.modalContainer.add(submitBg)
+    
+    const submitButton = this.add.text(0, 40, 'SUBMIT', {
+      fontFamily: 'Poppins',
+      fontSize: '20px',
+      fontStyle: '600',
+      fill: '#0a0e27'
+    })
+    submitButton.setOrigin(0.5)
+    submitButton.setInteractive({ useHandCursor: true })
+    this.modalContainer.add(submitButton)
+    
+    submitButton.on('pointerdown', () => {
+      this.submitCode()
+    })
+    
+    // Close button
+    const closeButton = this.add.text(180, -80, '✕', {
+      fontSize: '32px',
+      fill: '#ffffff'
+    })
+    closeButton.setOrigin(0.5)
+    closeButton.setInteractive({ useHandCursor: true })
+    this.modalContainer.add(closeButton)
+    
+    closeButton.on('pointerdown', () => {
+      this.hideCodeModal()
+    })
+    
+    // Click outside to close
+    this.modalBg.on('pointerdown', () => {
+      this.hideCodeModal()
+    })
+  }
+  
+  createCodeInputField() {
+    // Create a text display for the code (since Phaser doesn't have native input)
+    this.codeDisplay = this.add.text(0, -10, '', {
+      fontFamily: 'Poppins',
+      fontSize: '32px',
+      fontStyle: '600',
+      fill: '#ffffff',
+      fixedWidth: 150,
+      align: 'center'
+    })
+    this.codeDisplay.setOrigin(0.5)
+    this.modalContainer.add(this.codeDisplay)
+    
+    // Input box visual
+    const inputBox = this.add.graphics()
+    inputBox.lineStyle(2, 0x9b59ff, 1)
+    inputBox.strokeRoundedRect(-80, -25, 160, 40, 5)
+    this.modalContainer.add(inputBox)
+    
+    // Store entered code
+    this.enteredCode = ''
+  }
+  
+  showCodeModal() {
+    this.modalBg.setVisible(true)
+    this.modalContainer.setVisible(true)
+    this.enteredCode = ''
+    this.codeDisplay.setText('')
+    
+    // Enable keyboard input
+    this.input.keyboard.on('keydown', this.handleKeyDown, this)
+  }
+  
+  hideCodeModal() {
+    this.modalBg.setVisible(false)
+    this.modalContainer.setVisible(false)
+    this.input.keyboard.off('keydown', this.handleKeyDown, this)
+  }
+  
+  handleKeyDown(event) {
+    if (event.key >= '0' && event.key <= '9') {
+      if (this.enteredCode.length < 4) {
+        this.enteredCode += event.key
+        this.codeDisplay.setText(this.enteredCode)
+      }
+    } else if (event.key === 'Backspace') {
+      this.enteredCode = this.enteredCode.slice(0, -1)
+      this.codeDisplay.setText(this.enteredCode)
+    } else if (event.key === 'Enter') {
+      this.submitCode()
+    }
+  }
+  
+  submitCode() {
+    if (this.enteredCode.length !== 4) {
+      this.showFlashMessage('Code must be 4 digits', '#ff3366')
+      return
+    }
+    
+    const result = validateCode(this.enteredCode)
+    
+    if (result.valid) {
+      this.showFlashMessage(result.description, result.color || '#00ff88')
+      this.hideCodeModal()
+      
+      // Update active codes indicator
+      this.showActiveCodesIndicator(this.cameras.main.width, this.cameras.main.height)
+    } else {
+      this.showFlashMessage(result.description, '#ff3366')
+      this.enteredCode = ''
+      this.codeDisplay.setText('')
+    }
+  }
+  
+  showFlashMessage(message, color = '#ffffff') {
+    const { width, height } = this.cameras.main
+    
+    // Remove existing flash message if any
+    if (this.flashMessage) {
+      this.flashMessage.destroy()
+      if (this.flashBg) this.flashBg.destroy()
+    }
+    
+    // Create flash message background
+    this.flashBg = this.add.graphics()
+    this.flashBg.fillStyle(0x000000, 0.9)
+    this.flashBg.fillRoundedRect(width / 2 - 200, height * 0.35 - 30, 400, 60, 15)
+    this.flashBg.setDepth(2000)
+    
+    // Create flash message text
+    this.flashMessage = this.add.text(width / 2, height * 0.35, message, {
+      fontFamily: 'Poppins',
+      fontSize: '24px',
+      fontStyle: '700',
+      fill: color,
+      stroke: '#000000',
+      strokeThickness: 4
+    })
+    this.flashMessage.setOrigin(0.5)
+    this.flashMessage.setDepth(2001)
+    
+    // Animate in
+    this.flashMessage.setScale(0)
+    this.flashBg.setScale(0)
+    
+    this.tweens.add({
+      targets: [this.flashMessage, this.flashBg],
+      scale: 1,
+      duration: 200,
+      ease: 'Back.easeOut',
+      onComplete: () => {
+        // Fade out after delay
+        this.time.delayedCall(2000, () => {
+          this.tweens.add({
+            targets: [this.flashMessage, this.flashBg],
+            alpha: 0,
+            duration: 500,
+            onComplete: () => {
+              if (this.flashMessage) this.flashMessage.destroy()
+              if (this.flashBg) this.flashBg.destroy()
+              this.flashMessage = null
+              this.flashBg = null
+            }
+          })
+        })
+      }
+    })
+  }
+  
+  showActiveCodesIndicator(width, height) {
+    // Remove existing indicator if any
+    if (this.codesIndicator) {
+      this.codesIndicator.destroy()
+    }
+    
+    if (activeCodes.size > 0) {
+      this.codesIndicator = this.add.text(width - 20, 20, `★ ${activeCodes.size} CODE${activeCodes.size > 1 ? 'S' : ''} ACTIVE`, {
+        fontFamily: 'Poppins',
+        fontSize: '16px',
+        fontStyle: '600',
+        fill: '#ffd700',
+        stroke: '#000000',
+        strokeThickness: 2
+      })
+      this.codesIndicator.setOrigin(1, 0)
+      this.codesIndicator.setShadow(0, 2, '#ff6600', 10, true, true)
+      
+      // Pulsing animation
+      this.tweens.add({
+        targets: this.codesIndicator,
+        scale: { from: 1, to: 1.1 },
+        duration: 1000,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+      })
+    }
   }
 }
 

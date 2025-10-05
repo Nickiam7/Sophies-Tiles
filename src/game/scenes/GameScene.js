@@ -11,10 +11,18 @@ class GameScene extends Phaser.Scene {
     // Get difficulty from data (default to easy if not provided)
     this.difficulty = data?.difficulty || 'easy';
     
+    // Get code effects from data
+    this.codeEffects = {
+      lives: data?.lives || 3,
+      speedMultiplier: data?.speedMultiplier || 1.0,
+      startingPoints: data?.startingPoints || 0,
+      pointMultiplier: data?.pointMultiplier || 1
+    };
+    
     // Reset all game state when scene starts/restarts
-    this.score = 0;
+    this.score = this.codeEffects.startingPoints; // Use starting points from codes
     this.combo = 0;
-    this.lives = 3;
+    this.lives = this.codeEffects.lives; // Use code-modified lives
     this.tiles = [];
     this.tilePool = [];
     this.isGameOver = false;
@@ -48,8 +56,8 @@ class GameScene extends Phaser.Scene {
         break;
     }
     
-    // Set initial game speed (will increase with each level)
-    this.gameSpeed = this.baseSpeed;
+    // Set initial game speed (will increase with each level) - apply code effect
+    this.gameSpeed = this.baseSpeed * this.codeEffects.speedMultiplier;
   }
   
   cleanupUI() {
@@ -215,13 +223,76 @@ class GameScene extends Phaser.Scene {
     this.livesLabel.setDepth(101);
     this.livesLabel.setShadow(0, 2, '#000000', 4, true, true);
     
-    this.livesText = this.add.text(width - 80, 65, '3', {
+    this.livesText = this.add.text(width - 80, 65, `${this.lives}`, {
       ...TEXT_STYLES.hudValue,
       fill: '#ff6b9d'
     });
     this.livesText.setOrigin(0.5, 0);
     this.livesText.setDepth(101);
     this.livesText.setShadow(0, 3, '#ff0066', 10, true, true);
+    
+    // Show code indicators if active
+    let indicatorY = 100;
+    
+    if (this.codeEffects.lives > 3) {
+      const megaLivesIndicator = this.add.text(80, indicatorY, 'MEGA LIVES', {
+        fontFamily: 'Poppins',
+        fontSize: '14px',
+        fontStyle: '600',
+        fill: '#ff6b9d',
+        stroke: '#000000',
+        strokeThickness: 2
+      });
+      megaLivesIndicator.setOrigin(0.5, 0);
+      megaLivesIndicator.setDepth(101);
+      megaLivesIndicator.setShadow(0, 2, '#ff0066', 5, true, true);
+      indicatorY += 20;
+    }
+    
+    if (this.codeEffects.startingPoints > 0) {
+      const billionIndicator = this.add.text(80, indicatorY, 'BILLION PTS', {
+        fontFamily: 'Poppins',
+        fontSize: '14px',
+        fontStyle: '600',
+        fill: '#ffd700',
+        stroke: '#000000',
+        strokeThickness: 2
+      });
+      billionIndicator.setOrigin(0.5, 0);
+      billionIndicator.setDepth(101);
+      billionIndicator.setShadow(0, 2, '#ff6600', 5, true, true);
+    }
+    
+    indicatorY = 100;
+    
+    if (this.codeEffects.speedMultiplier < 1) {
+      const slowMoIndicator = this.add.text(width - 80, indicatorY, 'SLOW MOTION', {
+        fontFamily: 'Poppins',
+        fontSize: '14px',
+        fontStyle: '600',
+        fill: '#00ccff',
+        stroke: '#000000',
+        strokeThickness: 2
+      });
+      slowMoIndicator.setOrigin(0.5, 0);
+      slowMoIndicator.setDepth(101);
+      slowMoIndicator.setShadow(0, 2, '#0066ff', 5, true, true);
+      indicatorY += 20;
+    }
+    
+    if (this.codeEffects.pointMultiplier > 1) {
+      const multiplierIndicator = this.add.text(width - 80, indicatorY, `${this.codeEffects.pointMultiplier}X POINTS`, {
+        fontFamily: 'Poppins',
+        fontSize: '14px',
+        fontStyle: '600',
+        fill: '#9b59ff',
+        stroke: '#000000',
+        strokeThickness: 2
+      });
+      multiplierIndicator.setOrigin(0.5, 0);
+      multiplierIndicator.setDepth(101);
+      multiplierIndicator.setShadow(0, 2, '#6600ff', 5, true, true);
+    }
   }
 
   setupLevelUI() {
@@ -410,7 +481,7 @@ class GameScene extends Phaser.Scene {
       if (tile.isLongTile && tile.isHolding) {
         tile.isHolding = false;
         const progress = tile.holdProgress / tile.tileHeight;
-        this.score += Math.floor(20 * progress);
+        this.score += Math.floor(20 * progress * this.codeEffects.pointMultiplier);
 
         if (progress >= 0.8) {
           // Store previous combo to check for milestone crossing
@@ -442,7 +513,7 @@ class GameScene extends Phaser.Scene {
       if (tile.isLongTile && tile.isHolding) {
         tile.isHolding = false;
         const progress = tile.holdProgress / tile.tileHeight;
-        this.score += Math.floor(20 * progress);
+        this.score += Math.floor(20 * progress * this.codeEffects.pointMultiplier);
 
         if (progress >= 0.8) {
           // Store previous combo to check for milestone crossing
@@ -511,7 +582,7 @@ class GameScene extends Phaser.Scene {
     const holdingTile = this.holdingTiles.get(lane);
     if (holdingTile) {
       const progress = holdingTile.holdProgress / holdingTile.tileHeight;
-      this.score += Math.floor(20 * progress);
+      this.score += Math.floor(20 * progress * this.codeEffects.pointMultiplier);
 
       if (progress >= 0.8) {
         // Store previous combo to check for milestone crossing
@@ -543,7 +614,8 @@ class GameScene extends Phaser.Scene {
     if (tile.isHit) return;
 
     tile.isHit = true;
-    const points = 10 * Math.max(1, Math.floor(this.combo / 5));
+    const basePoints = 10 * Math.max(1, Math.floor(this.combo / 5));
+    const points = basePoints * this.codeEffects.pointMultiplier;
     this.score += points;
     
     // Store previous combo to check for milestone crossing
@@ -704,7 +776,7 @@ class GameScene extends Phaser.Scene {
     
     if (randomOutcome < 0.4) {
       // Big points bonus!
-      resultValue = Phaser.Math.Between(50, 150);
+      resultValue = Phaser.Math.Between(50, 150) * this.codeEffects.pointMultiplier;
       this.score += resultValue;
       resultMessage = `+${resultValue} POINTS!`;
       resultColor = '#ffd700';
@@ -716,7 +788,7 @@ class GameScene extends Phaser.Scene {
         resultColor = '#ff3366';
       } else {
         // If only 1 life left, give points instead
-        resultValue = 30;
+        resultValue = 30 * this.codeEffects.pointMultiplier;
         this.score += resultValue;
         resultMessage = `+${resultValue} POINTS!`;
         resultColor = '#ffd700';
@@ -729,7 +801,7 @@ class GameScene extends Phaser.Scene {
         resultColor = '#00ff88';
       } else {
         // Max lives, give points instead
-        resultValue = 100;
+        resultValue = 100 * this.codeEffects.pointMultiplier;
         this.score += resultValue;
         resultMessage = `+${resultValue} POINTS!`;
         resultColor = '#ffd700';
@@ -1080,8 +1152,8 @@ class GameScene extends Phaser.Scene {
   startNextLevel() {
     this.currentLevel++;
     
-    // Update speed for new level
-    this.gameSpeed = this.baseSpeed * Math.pow(this.speedMultiplier, this.currentLevel - 1);
+    // Update speed for new level - apply code effect
+    this.gameSpeed = this.baseSpeed * Math.pow(this.speedMultiplier, this.currentLevel - 1) * this.codeEffects.speedMultiplier;
     
     // Update UI
     this.levelText.setText(`LEVEL ${this.currentLevel}`);

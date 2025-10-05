@@ -23,23 +23,23 @@ class GameScene extends Phaser.Scene {
     
     // Level system - ensure everything is reset
     this.currentLevel = 1; // Always start at level 1
-    this.maxLevel = 5;
+    this.maxLevel = 10; // Increased from 5 to 10 levels
     this.levelDuration = 20000; // 20 seconds per level
     this.levelStartTime = null; // Set to null, will be initialized in create()
     this.levelProgress = 0;
     this.isTransitioningLevel = false;
-    this.speedMultiplier = 1.25; // 25% speed increase per level
+    this.speedMultiplier = 1.12; // Reduced from 1.25 to 1.12 for smoother progression over 10 levels
     this.lastLuckyTileTime = 0; // Track when last lucky tile was spawned
     
     // Set base speed based on difficulty (this affects ALL levels)
     switch(this.difficulty) {
       case 'hard':
-        // Start with level 5 speed as base, will get even faster with each level
-        this.baseSpeed = GAME_CONFIG.tileSpeed * Math.pow(this.speedMultiplier, 4);
+        // Start with higher base speed, will get even faster with each level
+        this.baseSpeed = GAME_CONFIG.tileSpeed * Math.pow(this.speedMultiplier, 5); // Adjusted for 10 levels
         break;
       case 'medium':
-        // Start with level 3 speed as base
-        this.baseSpeed = GAME_CONFIG.tileSpeed * Math.pow(this.speedMultiplier, 2);
+        // Start with moderate base speed
+        this.baseSpeed = GAME_CONFIG.tileSpeed * Math.pow(this.speedMultiplier, 3); // Adjusted for 10 levels
         break;
       case 'easy':
       default:
@@ -980,7 +980,7 @@ class GameScene extends Phaser.Scene {
         if (this.currentLevel < this.maxLevel) {
           this.startLevelTransition();
         } else if (this.currentLevel === this.maxLevel) {
-          // Victory after completing all 5 levels!
+          // Victory after completing all 10 levels!
           this.gameVictory();
         }
       }
@@ -1199,7 +1199,7 @@ class GameScene extends Phaser.Scene {
     });
     scoreText.setOrigin(0.5);
     
-    const messageText = this.add.text(width / 2, height / 2 + 60, 'All 5 Levels Complete!', {
+    const messageText = this.add.text(width / 2, height / 2 + 60, 'All 10 Levels Complete!', {
       fontSize: '28px',
       fill: '#00ff00'
     });

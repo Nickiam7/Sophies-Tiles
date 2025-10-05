@@ -231,13 +231,13 @@ class GameScene extends Phaser.Scene {
     this.livesText.setDepth(101);
     this.livesText.setShadow(0, 3, '#ff0066', 10, true, true);
     
-    // Show code indicators if active
-    let indicatorY = 100;
+    // Show code indicators under respective HUD elements
     
+    // MEGA LIVES indicator under LIVES count
     if (this.codeEffects.lives > 3) {
-      const megaLivesIndicator = this.add.text(80, indicatorY, 'MEGA LIVES', {
+      const megaLivesIndicator = this.add.text(width - 80, 100, 'MEGA LIVES', {
         fontFamily: 'Poppins',
-        fontSize: '14px',
+        fontSize: '12px',
         fontStyle: '600',
         fill: '#ff6b9d',
         stroke: '#000000',
@@ -246,29 +246,44 @@ class GameScene extends Phaser.Scene {
       megaLivesIndicator.setOrigin(0.5, 0);
       megaLivesIndicator.setDepth(101);
       megaLivesIndicator.setShadow(0, 2, '#ff0066', 5, true, true);
-      indicatorY += 20;
     }
     
-    if (this.codeEffects.startingPoints > 0) {
-      const billionIndicator = this.add.text(80, indicatorY, 'BILLION PTS', {
+    // Point-related indicators under SCORE count
+    const hasPointBoosts = this.codeEffects.startingPoints > 0 || this.codeEffects.pointMultiplier > 1;
+    if (hasPointBoosts) {
+      let indicatorText = '';
+      
+      // Build the indicator text based on active codes
+      if (this.codeEffects.pointMultiplier > 1) {
+        indicatorText = `${this.codeEffects.pointMultiplier}X POINTS`;
+      }
+      
+      if (this.codeEffects.startingPoints > 0) {
+        if (indicatorText) {
+          indicatorText += ' • BILLION PTS';
+        } else {
+          indicatorText = 'BILLION PTS';
+        }
+      }
+      
+      const pointIndicator = this.add.text(80, 100, indicatorText, {
         fontFamily: 'Poppins',
-        fontSize: '14px',
+        fontSize: '12px',
         fontStyle: '600',
         fill: '#ffd700',
         stroke: '#000000',
         strokeThickness: 2
       });
-      billionIndicator.setOrigin(0.5, 0);
-      billionIndicator.setDepth(101);
-      billionIndicator.setShadow(0, 2, '#ff6600', 5, true, true);
+      pointIndicator.setOrigin(0.5, 0);
+      pointIndicator.setDepth(101);
+      pointIndicator.setShadow(0, 2, '#ff6600', 5, true, true);
     }
     
-    indicatorY = 100;
-    
+    // SLOW MOTION indicator at bottom center of HUD
     if (this.codeEffects.speedMultiplier < 1) {
-      const slowMoIndicator = this.add.text(width - 80, indicatorY, 'SLOW MOTION', {
+      const slowMoIndicator = this.add.text(width / 2, 115, 'SLOW MOTION', {
         fontFamily: 'Poppins',
-        fontSize: '14px',
+        fontSize: '12px',
         fontStyle: '600',
         fill: '#00ccff',
         stroke: '#000000',
@@ -277,21 +292,6 @@ class GameScene extends Phaser.Scene {
       slowMoIndicator.setOrigin(0.5, 0);
       slowMoIndicator.setDepth(101);
       slowMoIndicator.setShadow(0, 2, '#0066ff', 5, true, true);
-      indicatorY += 20;
-    }
-    
-    if (this.codeEffects.pointMultiplier > 1) {
-      const multiplierIndicator = this.add.text(width - 80, indicatorY, `${this.codeEffects.pointMultiplier}X POINTS`, {
-        fontFamily: 'Poppins',
-        fontSize: '14px',
-        fontStyle: '600',
-        fill: '#9b59ff',
-        stroke: '#000000',
-        strokeThickness: 2
-      });
-      multiplierIndicator.setOrigin(0.5, 0);
-      multiplierIndicator.setDepth(101);
-      multiplierIndicator.setShadow(0, 2, '#6600ff', 5, true, true);
     }
   }
 

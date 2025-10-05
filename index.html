@@ -3,7 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover" />
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="A fast-paced tile-tapping rhythm game" />
+    <meta name="theme-color" content="#0a0e27" />
+    
+    <!-- Mobile Web App Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    
+    <!-- Apple/iOS Specific Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Sophie's Tiles" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    
+    <!-- Prevent zooming on double tap -->
+    <meta name="format-detection" content="telephone=no" />
+    
+    <!-- Open Graph Tags for social sharing -->
+    <meta property="og:title" content="Sophie's Tiles" />
+    <meta property="og:description" content="A fast-paced tile-tapping rhythm game" />
+    <meta property="og:type" content="website" />
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
@@ -13,6 +36,10 @@
         margin: 0;
         padding: 0;
         box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
       }
       
       html, body {
@@ -21,10 +48,14 @@
         overflow: hidden;
         margin: 0;
         padding: 0;
+        position: fixed;
+        background-color: #0a0e27;
       }
       
       body {
         font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
       }
       
       #root {
@@ -32,6 +63,20 @@
         height: 100%;
         margin: 0;
         padding: 0;
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+      }
+      
+      /* Prevent pull-to-refresh on iOS */
+      body {
+        overscroll-behavior-y: none;
+      }
+      
+      /* Hide scrollbars */
+      ::-webkit-scrollbar {
+        display: none;
       }
     </style>
   </head>

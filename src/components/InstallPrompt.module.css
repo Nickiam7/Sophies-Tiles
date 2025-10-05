@@ -1,0 +1,211 @@
+.promptOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(10, 14, 39, 0.95);
+  backdrop-filter: blur(10px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.promptCard {
+  background: linear-gradient(135deg, #151937 0%, #0a0e27 100%);
+  border: 2px solid rgba(0, 255, 136, 0.3);
+  border-radius: 20px;
+  padding: 32px;
+  max-width: 380px;
+  width: 90%;
+  position: relative;
+  animation: slideUp 0.4s ease-out;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 80px rgba(0, 255, 136, 0.1);
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.closeButton {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 24px;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.closeButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  transform: scale(1.1);
+}
+
+.iconContainer {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.appIcon {
+  width: 80px;
+  height: 80px;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 0 0 40px rgba(0, 255, 136, 0.2);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  text-align: center;
+  margin: 0 0 12px 0;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.description {
+  font-family: 'Poppins', sans-serif;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: center;
+  margin: 0 0 32px 0;
+  line-height: 1.5;
+}
+
+.instructions {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.step:last-child {
+  margin-bottom: 0;
+}
+
+.stepNumber {
+  background: linear-gradient(135deg, #00ff88, #00cc66);
+  color: #0a0e27;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.shareIcon {
+  display: inline-block;
+  background: rgba(0, 255, 136, 0.2);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin: 0 4px;
+  font-size: 18px;
+  vertical-align: middle;
+}
+
+.dismissButton {
+  width: 100%;
+  background: linear-gradient(135deg, #00ff88, #00cc66);
+  color: #0a0e27;
+  border: none;
+  border-radius: 12px;
+  padding: 16px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-shadow: none;
+}
+
+.dismissButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0, 255, 136, 0.3);
+}
+
+.dismissButton:active {
+  transform: translateY(0);
+}
+
+/* iPad specific adjustments */
+@media screen and (min-width: 768px) {
+  .promptCard {
+    max-width: 440px;
+    padding: 40px;
+  }
+  
+  .appIcon {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .title {
+    font-size: 32px;
+  }
+  
+  .description {
+    font-size: 18px;
+  }
+  
+  .step {
+    font-size: 16px;
+  }
+  
+  .stepNumber {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+}

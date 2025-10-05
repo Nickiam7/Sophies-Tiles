@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" fill="#0a0e27"/>
+  
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#151937;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0a0e27;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffd700;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ffaa00;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <rect width="512" height="512" fill="url(#bgGrad)"/>
+  
+  <!-- Green tiles -->
+  <rect x="64" y="80" width="128" height="51" fill="#00ff88" rx="4"/>
+  <rect x="320" y="160" width="128" height="51" fill="#00ff88" rx="4"/>
+  
+  <!-- Blue tile (longer) -->
+  <rect x="192" y="240" width="128" height="77" fill="#00ccff" rx="4"/>
+  
+  <!-- Lucky golden tile -->
+  <rect x="64" y="360" width="128" height="51" fill="url(#goldGrad)" rx="4" filter="url(#glow)"/>
+  
+  <!-- S letter in center -->
+  <text x="256" y="256" font-family="Arial, sans-serif" font-size="154" font-weight="bold" fill="#ffffff" text-anchor="middle" dominant-baseline="middle" filter="url(#glow)">S</text>
+  
+  <!-- Border -->
+  <rect x="4" y="4" width="504" height="504" fill="none" stroke="#00ff88" stroke-width="4" rx="8" opacity="0.5"/>
+</svg>

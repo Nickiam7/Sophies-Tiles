@@ -1,8 +1,14 @@
 import GameContainer from './components/GameContainer'
+import InstallPrompt from './components/InstallPrompt'
 import './App.css'
 
 function App() {
-  return <GameContainer />
+  return (
+    <>
+      <GameContainer />
+      <InstallPrompt />
+    </>
+  )
 }
 
 export default App

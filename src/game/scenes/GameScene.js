@@ -211,10 +211,19 @@ class GameScene extends Phaser.Scene {
     this.scoreLabel.setDepth(101);
     this.scoreLabel.setShadow(0, 2, '#000000', 4, true, true);
     
-    this.scoreText = this.add.text(80, 65, '0', TEXT_STYLES.hudValue);
+    // Initialize score text with formatted value
+    const initialScore = this.formatScore(this.score);
+    this.scoreText = this.add.text(80, 65, initialScore, TEXT_STYLES.hudValue);
     this.scoreText.setOrigin(0.5, 0);
     this.scoreText.setDepth(101);
     this.scoreText.setShadow(0, 3, '#000000', 8, true, true);
+    
+    // Apply initial font size if score is large
+    if (initialScore.length > 7) {
+      this.scoreText.setFontSize('32px');
+    } else if (initialScore.length > 5) {
+      this.scoreText.setFontSize('36px');
+    }
 
     // Lives on right - label and value stacked
     const { width } = this.cameras.main;
@@ -1235,8 +1244,41 @@ class GameScene extends Phaser.Scene {
     }
   }
 
+  formatScore(score) {
+    // Format large numbers with K, M, B suffixes
+    if (score >= 1000000000) {
+      // Billions
+      const billions = (score / 1000000000).toFixed(score >= 10000000000 ? 0 : 1);
+      return `${billions}B`;
+    } else if (score >= 1000000) {
+      // Millions
+      const millions = (score / 1000000).toFixed(score >= 10000000 ? 0 : 1);
+      return `${millions}M`;
+    } else if (score >= 10000) {
+      // Thousands
+      const thousands = (score / 1000).toFixed(score >= 100000 ? 0 : 1);
+      return `${thousands}K`;
+    }
+    return score.toString();
+  }
+  
   updateUI() {
-    this.scoreText.setText(`${this.score}`);
+    const formattedScore = this.formatScore(this.score);
+    this.scoreText.setText(formattedScore);
+    
+    // Dynamic font sizing based on score display length
+    let fontSize = '42px'; // Default size
+    if (formattedScore.length > 7) {
+      fontSize = '32px';
+    } else if (formattedScore.length > 5) {
+      fontSize = '36px';
+    }
+    
+    // Only update font size if it changed
+    if (this.scoreText.style.fontSize !== fontSize) {
+      this.scoreText.setFontSize(fontSize);
+    }
+    
     this.comboText.setText(`Streak: ${this.combo}`);
     this.livesText.setText(`${this.lives}`);
   }
@@ -1265,7 +1307,7 @@ class GameScene extends Phaser.Scene {
     });
     victoryText.setOrigin(0.5);
     
-    const scoreText = this.add.text(width / 2, height / 2, `Final Score: ${this.score}`, {
+    const scoreText = this.add.text(width / 2, height / 2, `Final Score: ${this.formatScore(this.score)}`, {
       fontSize: '36px',
       fill: '#ffffff'
     });

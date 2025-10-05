@@ -377,12 +377,12 @@ class MenuScene extends Phaser.Scene {
   }
   
   createCodeInputField() {
-    // Create a text display for the code (since Phaser doesn't have native input)
-    this.codeDisplay = this.add.text(0, -10, '', {
+    // Create a text display for the code
+    this.codeDisplay = this.add.text(0, -10, '____', {
       fontFamily: 'Poppins',
       fontSize: '32px',
       fontStyle: '600',
-      fill: '#ffffff',
+      fill: '#666666',
       fixedWidth: 150,
       align: 'center'
     })
@@ -390,22 +390,113 @@ class MenuScene extends Phaser.Scene {
     this.modalContainer.add(this.codeDisplay)
     
     // Input box visual
-    const inputBox = this.add.graphics()
-    inputBox.lineStyle(2, 0x9b59ff, 1)
-    inputBox.strokeRoundedRect(-80, -25, 160, 40, 5)
-    this.modalContainer.add(inputBox)
+    this.inputBox = this.add.graphics()
+    this.inputBox.lineStyle(2, 0x9b59ff, 1)
+    this.inputBox.strokeRoundedRect(-80, -25, 160, 40, 5)
+    this.modalContainer.add(this.inputBox)
+    
+    // Make input area clickable to focus HTML input on mobile
+    const inputHitArea = this.add.rectangle(0, -10, 160, 40)
+    inputHitArea.setInteractive({ useHandCursor: true })
+    inputHitArea.setAlpha(0.01) // Nearly invisible but interactive
+    this.modalContainer.add(inputHitArea)
+    
+    inputHitArea.on('pointerdown', () => {
+      // Focus HTML input when tapping the input area
+      if (this.htmlInput) {
+        this.htmlInput.focus()
+      }
+    })
+    
+    // Create HTML input element for mobile keyboard support
+    this.createHTMLInput()
     
     // Store entered code
     this.enteredCode = ''
+  }
+  
+  createHTMLInput() {
+    // Create invisible HTML input that triggers mobile keyboard
+    const input = document.createElement('input')
+    input.type = 'tel' // 'tel' triggers numeric keyboard on mobile
+    input.inputMode = 'numeric' // Additional hint for numeric input
+    input.pattern = '[0-9]*' // iOS specific pattern for numeric keyboard
+    input.maxLength = 4
+    input.id = 'code-input'
+    input.style.position = 'absolute'
+    input.style.left = '-9999px' // Position off-screen but still focusable
+    input.style.opacity = '0'
+    input.style.width = '1px'
+    input.style.height = '1px'
+    input.style.border = 'none'
+    input.autocomplete = 'off'
+    input.autocorrect = 'off'
+    input.autocapitalize = 'off'
+    
+    document.body.appendChild(input)
+    this.htmlInput = input
+    
+    // Handle input events
+    input.addEventListener('input', (e) => {
+      // Filter to only allow digits
+      const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 4)
+      e.target.value = value
+      this.enteredCode = value
+      
+      // Update display with proper formatting
+      if (value.length === 0) {
+        this.codeDisplay.setText('____')
+        this.codeDisplay.setFill('#666666')
+      } else {
+        const display = value.padEnd(4, '_')
+        this.codeDisplay.setText(display)
+        this.codeDisplay.setFill('#ffffff')
+      }
+    })
+    
+    // Handle focus/blur for visual feedback
+    input.addEventListener('focus', () => {
+      if (this.inputBox) {
+        this.inputBox.clear()
+        this.inputBox.lineStyle(3, 0xb47fff, 1)
+        this.inputBox.strokeRoundedRect(-80, -25, 160, 40, 5)
+      }
+    })
+    
+    input.addEventListener('blur', () => {
+      if (this.inputBox) {
+        this.inputBox.clear()
+        this.inputBox.lineStyle(2, 0x9b59ff, 1)
+        this.inputBox.strokeRoundedRect(-80, -25, 160, 40, 5)
+      }
+    })
+    
+    // Handle submit on enter/go
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        this.submitCode()
+      }
+    })
   }
   
   showCodeModal() {
     this.modalBg.setVisible(true)
     this.modalContainer.setVisible(true)
     this.enteredCode = ''
-    this.codeDisplay.setText('')
+    this.codeDisplay.setText('____')
+    this.codeDisplay.setFill('#666666')
     
-    // Enable keyboard input
+    // Reset and focus HTML input for mobile keyboard
+    if (this.htmlInput) {
+      this.htmlInput.value = ''
+      // Small delay to ensure modal is visible before focusing
+      setTimeout(() => {
+        this.htmlInput.focus()
+      }, 100)
+    }
+    
+    // Enable keyboard input for desktop
     this.input.keyboard.on('keydown', this.handleKeyDown, this)
   }
   
@@ -413,6 +504,11 @@ class MenuScene extends Phaser.Scene {
     this.modalBg.setVisible(false)
     this.modalContainer.setVisible(false)
     this.input.keyboard.off('keydown', this.handleKeyDown, this)
+    
+    // Blur HTML input to hide keyboard
+    if (this.htmlInput) {
+      this.htmlInput.blur()
+    }
   }
   
   handleKeyDown(event) {
@@ -532,6 +628,14 @@ class MenuScene extends Phaser.Scene {
         repeat: -1,
         ease: 'Sine.easeInOut'
       })
+    }
+  }
+  
+  shutdown() {
+    // Clean up HTML input when scene is destroyed
+    if (this.htmlInput) {
+      this.htmlInput.remove()
+      this.htmlInput = null
     }
   }
 }

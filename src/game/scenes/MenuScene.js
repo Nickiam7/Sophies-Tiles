@@ -418,32 +418,70 @@ class MenuScene extends Phaser.Scene {
   createHTMLInput() {
     // Create invisible HTML input that triggers mobile keyboard
     const input = document.createElement('input')
-    input.type = 'tel' // 'tel' triggers numeric keyboard on mobile
+    input.type = 'number' // Use number type for better tablet support
     input.inputMode = 'numeric' // Additional hint for numeric input
-    input.pattern = '[0-9]*' // iOS specific pattern for numeric keyboard
+    input.pattern = '[0-9]{4}' // Pattern for 4 digits
     input.maxLength = 4
     input.id = 'code-input'
-    input.style.position = 'absolute'
-    input.style.left = '-9999px' // Position off-screen but still focusable
-    input.style.opacity = '0'
-    input.style.width = '1px'
-    input.style.height = '1px'
+    input.style.position = 'fixed' // Fixed positioning instead of absolute
+    input.style.top = '50%' // Center it but make it invisible
+    input.style.left = '50%'
+    input.style.transform = 'translate(-50%, -50%)'
+    input.style.opacity = '0' // Invisible but still focusable
+    input.style.width = '200px' // Give it proper dimensions
+    input.style.height = '50px'
+    input.style.fontSize = '24px' // Large font for mobile
     input.style.border = 'none'
+    input.style.background = 'transparent'
+    input.style.color = 'transparent'
+    input.style.caretColor = 'transparent' // Hide cursor
+    input.style.webkitUserSelect = 'text' // Allow selection on iOS
+    input.style.pointerEvents = 'auto' // Ensure it can receive touch events
+    input.style.zIndex = '10000' // High z-index to be on top
     input.autocomplete = 'off'
     input.autocorrect = 'off'
     input.autocapitalize = 'off'
+    
+    // Remove spinner buttons for number input
+    input.style.webkitAppearance = 'none'
+    input.style.mozAppearance = 'textfield'
     
     document.body.appendChild(input)
     this.htmlInput = input
     
     // Handle input events
     input.addEventListener('input', (e) => {
-      // Filter to only allow digits
-      const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 4)
-      e.target.value = value
+      // For number input, get the value and ensure it's 4 digits max
+      let value = e.target.value
+      
+      // Remove any non-digit characters and limit to 4 digits
+      value = value.replace(/[^0-9]/g, '').slice(0, 4)
+      
+      // Update the input value if it was modified
+      if (e.target.value !== value) {
+        e.target.value = value
+      }
+      
       this.enteredCode = value
       
       // Update display with proper formatting
+      if (value.length === 0) {
+        this.codeDisplay.setText('____')
+        this.codeDisplay.setFill('#666666')
+      } else {
+        const display = value.padEnd(4, '_')
+        this.codeDisplay.setText(display)
+        this.codeDisplay.setFill('#ffffff')
+      }
+    })
+    
+    // Also handle the change event for number inputs
+    input.addEventListener('change', (e) => {
+      // Ensure the value is clean on change
+      let value = e.target.value.replace(/[^0-9]/g, '').slice(0, 4)
+      e.target.value = value
+      this.enteredCode = value
+      
       if (value.length === 0) {
         this.codeDisplay.setText('____')
         this.codeDisplay.setFill('#666666')
@@ -490,9 +528,15 @@ class MenuScene extends Phaser.Scene {
     // Reset and focus HTML input for mobile keyboard
     if (this.htmlInput) {
       this.htmlInput.value = ''
+      // Make input visible temporarily for focus (still transparent)
+      this.htmlInput.style.pointerEvents = 'auto'
       // Small delay to ensure modal is visible before focusing
       setTimeout(() => {
         this.htmlInput.focus()
+        // iOS specific - sometimes needs a click simulation
+        if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+          this.htmlInput.click()
+        }
       }, 100)
     }
     
@@ -505,9 +549,11 @@ class MenuScene extends Phaser.Scene {
     this.modalContainer.setVisible(false)
     this.input.keyboard.off('keydown', this.handleKeyDown, this)
     
-    // Blur HTML input to hide keyboard
+    // Blur HTML input to hide keyboard and disable it
     if (this.htmlInput) {
       this.htmlInput.blur()
+      this.htmlInput.style.pointerEvents = 'none' // Disable when modal is hidden
+      this.htmlInput.value = '' // Clear value
     }
   }
   

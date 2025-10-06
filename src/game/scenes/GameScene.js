@@ -119,6 +119,7 @@ class GameScene extends Phaser.Scene {
     this.levelStartTime = null;
     this.isTransitioningLevel = false;
     this.lastLuckyTileTime = 0;  // Reset lucky tile cooldown
+    this.isPaused = false;  // Initialize pause flag
     // Note: currentLevel and gameSpeed are set based on difficulty in init()
     
     this.createHUD();
@@ -189,6 +190,223 @@ class GameScene extends Phaser.Scene {
     const hitLine = this.add.graphics();
     hitLine.lineStyle(3, 0xff3366, 0.6);
     hitLine.lineBetween(0, gameplayEnd - 120, GAME_CONFIG.width, gameplayEnd - 120);
+    
+    // Add home button in bottom left corner
+    this.createHomeButton();
+  }
+  
+  createHomeButton() {
+    const { width, height } = this.cameras.main;
+    
+    // Store references for hover effects
+    this.homeButtonBg = this.add.graphics();
+    this.homeButtonBg.fillStyle(0x151937, 0.8);
+    this.homeButtonBg.fillRoundedRect(15, height - 60, 50, 40, 8);
+    this.homeButtonBg.lineStyle(2, 0xff3366, 0.3);
+    this.homeButtonBg.strokeRoundedRect(15, height - 60, 50, 40, 8);
+    this.homeButtonBg.setDepth(500);
+    
+    // Create home icon using simple shapes
+    this.homeIcon = this.add.graphics();
+    this.homeIcon.lineStyle(2, 0xffffff, 0.9);
+    
+    // Draw house shape
+    const centerX = 40;
+    const centerY = height - 40;
+    
+    // Roof
+    this.homeIcon.beginPath();
+    this.homeIcon.moveTo(centerX - 10, centerY - 5);
+    this.homeIcon.lineTo(centerX, centerY - 12);
+    this.homeIcon.lineTo(centerX + 10, centerY - 5);
+    this.homeIcon.strokePath();
+    
+    // House body
+    this.homeIcon.strokeRect(centerX - 8, centerY - 5, 16, 12);
+    
+    // Door
+    this.homeIcon.fillStyle(0xffffff, 0.9);
+    this.homeIcon.fillRect(centerX - 2, centerY + 2, 4, 5);
+    
+    this.homeIcon.setDepth(501);
+    
+    // Create interactive hit area
+    const homeButton = this.add.rectangle(40, height - 40, 50, 40);
+    homeButton.setInteractive({ useHandCursor: true });
+    homeButton.setAlpha(0.01);
+    homeButton.setDepth(502);
+    
+    // Hover effects
+    homeButton.on('pointerover', () => {
+      this.homeButtonBg.clear();
+      this.homeButtonBg.fillStyle(0x151937, 1);
+      this.homeButtonBg.fillRoundedRect(15, height - 60, 50, 40, 8);
+      this.homeButtonBg.lineStyle(2, 0xff3366, 0.6);
+      this.homeButtonBg.strokeRoundedRect(15, height - 60, 50, 40, 8);
+      
+      // Redraw icon with brighter color on hover
+      this.homeIcon.clear();
+      this.homeIcon.lineStyle(2, 0xffffff, 1);
+      this.homeIcon.beginPath();
+      this.homeIcon.moveTo(centerX - 10, centerY - 5);
+      this.homeIcon.lineTo(centerX, centerY - 12);
+      this.homeIcon.lineTo(centerX + 10, centerY - 5);
+      this.homeIcon.strokePath();
+      this.homeIcon.strokeRect(centerX - 8, centerY - 5, 16, 12);
+      this.homeIcon.fillStyle(0xffffff, 1);
+      this.homeIcon.fillRect(centerX - 2, centerY + 2, 4, 5);
+    });
+    
+    homeButton.on('pointerout', () => {
+      this.homeButtonBg.clear();
+      this.homeButtonBg.fillStyle(0x151937, 0.8);
+      this.homeButtonBg.fillRoundedRect(15, height - 60, 50, 40, 8);
+      this.homeButtonBg.lineStyle(2, 0xff3366, 0.3);
+      this.homeButtonBg.strokeRoundedRect(15, height - 60, 50, 40, 8);
+      
+      // Redraw icon with normal color
+      this.homeIcon.clear();
+      this.homeIcon.lineStyle(2, 0xffffff, 0.9);
+      this.homeIcon.beginPath();
+      this.homeIcon.moveTo(centerX - 10, centerY - 5);
+      this.homeIcon.lineTo(centerX, centerY - 12);
+      this.homeIcon.lineTo(centerX + 10, centerY - 5);
+      this.homeIcon.strokePath();
+      this.homeIcon.strokeRect(centerX - 8, centerY - 5, 16, 12);
+      this.homeIcon.fillStyle(0xffffff, 0.9);
+      this.homeIcon.fillRect(centerX - 2, centerY + 2, 4, 5);
+    });
+    
+    // Click handler with confirmation
+    homeButton.on('pointerdown', () => {
+      this.showExitConfirmation();
+    });
+  }
+  
+  showExitConfirmation() {
+    if (this.isGameOver) return; // Don't show if game is already over
+    
+    const { width, height } = this.cameras.main;
+    
+    // Don't pause the scene yet - we need interaction for buttons
+    // Instead, set a flag to pause the game logic
+    this.isPaused = true;
+    
+    // Create confirmation modal background
+    this.confirmBg = this.add.graphics();
+    this.confirmBg.fillStyle(0x000000, 0.8);
+    this.confirmBg.fillRect(0, 0, width, height);
+    this.confirmBg.setDepth(1000);
+    this.confirmBg.setInteractive(new Phaser.Geom.Rectangle(0, 0, width, height), Phaser.Geom.Rectangle.Contains);
+    
+    // Modal box
+    const modalBox = this.add.graphics();
+    modalBox.fillGradientStyle(0x151937, 0x151937, 0x0a0e27, 0x0a0e27, 1);
+    modalBox.fillRoundedRect(width/2 - 200, height/2 - 100, 400, 200, 20);
+    modalBox.lineStyle(3, 0xff3366, 0.5);
+    modalBox.strokeRoundedRect(width/2 - 200, height/2 - 100, 400, 200, 20);
+    modalBox.setDepth(1001);
+    
+    // Confirmation text
+    const confirmText = this.add.text(width/2, height/2 - 40, 'Return to Main Menu?', {
+      fontFamily: 'Poppins',
+      fontSize: '28px',
+      fontStyle: '600',
+      fill: '#ffffff'
+    });
+    confirmText.setOrigin(0.5);
+    confirmText.setDepth(1002);
+    
+    const warningText = this.add.text(width/2, height/2, 'Your progress will be lost!', {
+      fontFamily: 'Poppins',
+      fontSize: '18px',
+      fill: '#ff3366'
+    });
+    warningText.setOrigin(0.5);
+    warningText.setDepth(1002);
+    
+    // Yes button
+    const yesBg = this.add.graphics();
+    yesBg.fillGradientStyle(0xff3366, 0xff3366, 0xcc0033, 0xcc0033, 1);
+    yesBg.fillRoundedRect(width/2 - 120, height/2 + 30, 100, 40, 10);
+    yesBg.setDepth(1001);
+    yesBg.setInteractive(new Phaser.Geom.Rectangle(width/2 - 120, height/2 + 30, 100, 40), Phaser.Geom.Rectangle.Contains);
+    
+    const yesButton = this.add.text(width/2 - 70, height/2 + 50, 'YES', {
+      fontFamily: 'Poppins',
+      fontSize: '20px',
+      fontStyle: '600',
+      fill: '#ffffff'
+    });
+    yesButton.setOrigin(0.5);
+    yesButton.setDepth(1002);
+    
+    // Add hover effect for yes button (on background)
+    yesBg.on('pointerover', () => {
+      yesButton.setScale(1.1);
+    });
+    yesBg.on('pointerout', () => {
+      yesButton.setScale(1.0);
+    });
+    
+    // No button
+    const noBg = this.add.graphics();
+    noBg.fillGradientStyle(0x00ff88, 0x00ff88, 0x00cc66, 0x00cc66, 1);
+    noBg.fillRoundedRect(width/2 + 20, height/2 + 30, 100, 40, 10);
+    noBg.setDepth(1001);
+    noBg.setInteractive(new Phaser.Geom.Rectangle(width/2 + 20, height/2 + 30, 100, 40), Phaser.Geom.Rectangle.Contains);
+    
+    const noButton = this.add.text(width/2 + 70, height/2 + 50, 'NO', {
+      fontFamily: 'Poppins',
+      fontSize: '20px',
+      fontStyle: '600',
+      fill: '#0a0e27'
+    });
+    noButton.setOrigin(0.5);
+    noButton.setDepth(1002);
+    
+    // Add hover effect for no button (on background)
+    noBg.on('pointerover', () => {
+      noButton.setScale(1.1);
+    });
+    noBg.on('pointerout', () => {
+      noButton.setScale(1.0);
+    });
+    
+    // Button handlers - attach to backgrounds for better click area
+    yesBg.on('pointerdown', () => {
+      // Clean up confirmation dialog
+      this.confirmBg.destroy();
+      modalBox.destroy();
+      confirmText.destroy();
+      warningText.destroy();
+      yesBg.destroy();
+      yesButton.destroy();
+      noBg.destroy();
+      noButton.destroy();
+      
+      // Reset pause flag
+      this.isPaused = false;
+      
+      // Go to menu
+      this.scene.stop('GameScene');
+      this.scene.start('MenuScene');
+    });
+    
+    noBg.on('pointerdown', () => {
+      // Clean up confirmation dialog
+      this.confirmBg.destroy();
+      modalBox.destroy();
+      confirmText.destroy();
+      warningText.destroy();
+      yesBg.destroy();
+      yesButton.destroy();
+      noBg.destroy();
+      noButton.destroy();
+      
+      // Resume game by clearing pause flag
+      this.isPaused = false;
+    });
   }
 
   setupInput() {
@@ -378,7 +596,7 @@ class GameScene extends Phaser.Scene {
   }
 
   spawnTile() {
-    if (this.isGameOver || this.isTransitioningLevel) return;
+    if (this.isGameOver || this.isTransitioningLevel || this.isPaused) return;
 
     const lane = Phaser.Math.Between(0, GAME_CONFIG.lanes - 1);
     const randomValue = Math.random();
@@ -1050,7 +1268,7 @@ class GameScene extends Phaser.Scene {
   }
 
   update() {
-    if (this.isGameOver) return;
+    if (this.isGameOver || this.isPaused) return;
 
     // Update level progress only if levelStartTime has been set
     if (!this.isTransitioningLevel && this.levelStartTime !== null) {
